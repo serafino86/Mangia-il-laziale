@@ -1,0 +1,1430 @@
+<!DOCTYPE html>
+
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+```
+<!-- Primary Meta Tags -->
+<title>Derby Snake - AS Roma Club Ginevra</title>
+<meta name="title" content="Derby Snake - Mangia il Laziale">
+<meta name="description" content="Il gioco virale dei tifosi romanisti! Guida il lupo e mangia i laziali. DAJE ROMA DAJE! 🐺⚽">
+
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://tuousername.github.io/derby-snake/">
+<meta property="og:title" content="Derby Snake - Mangia il Laziale 🐺">
+<meta property="og:description" content="Il gioco virale dei tifosi romanisti! Guida il lupo e mangia i laziali. DAJE ROMA DAJE!">
+<meta property="og:image" content="https://tuousername.github.io/derby-snake/preview.jpg">
+
+<!-- Twitter -->
+<meta property="twitter:card" content="summary_large_image">
+<meta property="twitter:url" content="https://tuousername.github.io/derby-snake/">
+<meta property="twitter:title" content="Derby Snake - Mangia il Laziale 🐺">
+<meta property="twitter:description" content="Il gioco virale dei tifosi romanisti! Guida il lupo e mangia i laziali. DAJE ROMA DAJE!">
+<meta property="twitter:image" content="https://tuousername.github.io/derby-snake/preview.jpg">
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#FFD700">
+<link rel="apple-touch-icon" href="icon-512.png">
+
+<!-- Google Analytics - SOSTITUISCI G-XXXXXXXXXX con il tuo ID -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-XXXXXXXXXX');
+</script>
+
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        position: fixed;
+        overscroll-behavior: none;
+    }
+
+    body {
+        font-family: 'Press Start 2P', cursive;
+        background: #000;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        touch-action: none;
+        position: relative;
+        -webkit-user-select: none;
+        user-select: none;
+    }
+
+    body::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: 
+            repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255, 215, 0, 0.08) 2px, rgba(255, 215, 0, 0.08) 4px),
+            repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(255, 0, 0, 0.08) 2px, rgba(255, 0, 0, 0.08) 4px),
+            radial-gradient(circle at 50% 50%, #1a0000 0%, #000 100%);
+        pointer-events: none;
+        animation: scanlines 8s linear infinite;
+    }
+
+    @keyframes scanlines {
+        0% { transform: translateY(0); }
+        100% { transform: translateY(4px); }
+    }
+
+    .game-container {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-between;
+        position: relative;
+        z-index: 1;
+    }
+
+    .header {
+        width: 100%;
+        padding: 8px 10px;
+        text-align: center;
+        background: linear-gradient(180deg, rgba(255, 215, 0, 0.2) 0%, transparent 100%);
+        border-bottom: 3px solid #FFD700;
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+    }
+
+    h1 {
+        font-size: clamp(0.8rem, 3vw, 1.4rem);
+        letter-spacing: 1px;
+        margin-bottom: 5px;
+        text-shadow: 
+            0 0 15px #FFD700,
+            0 0 30px #FF0000,
+            3px 3px 0 #DC143C;
+        color: #FFD700;
+        animation: neonPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes neonPulse {
+        0%, 100% { 
+            text-shadow: 
+                0 0 15px #FFD700,
+                0 0 30px #FF0000,
+                3px 3px 0 #DC143C;
+        }
+        50% { 
+            text-shadow: 
+                0 0 25px #FFD700,
+                0 0 50px #FF0000,
+                3px 3px 0 #DC143C;
+        }
+    }
+
+    .stats {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        margin-top: 3px;
+    }
+
+    .stat {
+        background: linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 0, 0, 0.3));
+        padding: 4px 12px;
+        border-radius: 6px;
+        border: 2px solid #FFD700;
+        box-shadow: 
+            0 0 15px rgba(255, 215, 0, 0.6),
+            inset 0 0 12px rgba(255, 0, 0, 0.2);
+    }
+
+    .stat-label {
+        font-size: 0.45rem;
+        color: #FFD700;
+        margin-bottom: 2px;
+        text-shadow: 0 0 8px #FFD700;
+    }
+
+    .stat-value {
+        font-size: 1rem;
+        color: #FFF;
+        text-shadow: 
+            0 0 10px #FFD700,
+            0 0 20px #FF0000;
+    }
+
+    .game-wrapper {
+        flex: 1;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 10px; // AUMENTATO da 5px a 10px
+        overflow: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    #gameCanvas {
+        border: 4px solid #FFD700;
+        border-radius: 8px;
+        background: #000;
+        box-shadow: 
+            0 0 30px rgba(255, 215, 0, 0.8),
+            0 0 60px rgba(255, 0, 0, 0.5),
+            inset 0 0 30px rgba(255, 215, 0, 0.1);
+        min-width: 400px;
+        min-height: 400px;
+    }
+
+    .controls {
+        width: 100%;
+        min-height: 110px;
+        height: 110px;
+        padding: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: linear-gradient(0deg, rgba(255, 215, 0, 0.2) 0%, transparent 100%);
+        border-top: 3px solid #FFD700;
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+        position: relative;
+        z-index: 100;
+        flex-shrink: 0;
+    }
+
+    .control-button {
+        width: clamp(70px, 15vw, 90px);
+        height: clamp(70px, 15vw, 90px);
+        border-radius: 50%;
+        background: linear-gradient(135deg, #FFD700 0%, #FF0000 100%);
+        border: 4px solid #FFA500;
+        box-shadow: 
+            0 0 25px rgba(255, 215, 0, 0.9),
+            0 0 50px rgba(255, 0, 0, 0.6),
+            inset 0 0 25px rgba(255, 255, 255, 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: clamp(2rem, 6vw, 3rem);
+        cursor: pointer;
+        user-select: none;
+        touch-action: manipulation;
+        transition: all 0.1s;
+    }
+
+    .control-button:active {
+        transform: scale(0.9);
+        box-shadow: 
+            0 0 40px rgba(255, 215, 0, 1),
+            0 0 80px rgba(255, 0, 0, 1),
+            inset 0 0 40px rgba(255, 255, 255, 0.5);
+        background: linear-gradient(135deg, #FFFF00 0%, #FF4500 100%);
+    }
+
+    .control-button.left {
+        margin-left: 10px;
+    }
+
+    .control-button.right {
+        margin-right: 10px;
+    }
+
+    #gameOverScreen, #startScreen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.95);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        animation: fadeIn 0.3s ease-out;
+        padding: 20px;
+        overflow-y: auto;
+    }
+
+    #startScreen {
+        display: flex;
+        background: #000;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    .game-over-content, .start-content {
+        text-align: center;
+        background: linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 0, 0, 0.3));
+        padding: 30px 25px;
+        border-radius: 15px;
+        border: 4px solid #FFD700;
+        box-shadow: 
+            0 0 50px rgba(255, 215, 0, 0.9),
+            0 0 100px rgba(255, 0, 0, 0.6);
+        animation: scaleIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        max-width: 90vw;
+    }
+
+    @keyframes scaleIn {
+        from {
+            transform: scale(0.5) rotate(-5deg);
+            opacity: 0;
+        }
+        to {
+            transform: scale(1) rotate(0deg);
+            opacity: 1;
+        }
+    }
+
+    .game-over-content h2, .start-content h2 {
+        font-size: clamp(1.3rem, 5vw, 2.2rem);
+        color: #FFD700;
+        margin-bottom: 15px;
+        text-shadow: 
+            0 0 15px #FFD700,
+            0 0 30px #FF0000,
+            3px 3px 0 #DC143C;
+        animation: neonFlicker 3s ease-in-out infinite;
+    }
+
+    @keyframes neonFlicker {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.85; }
+        75% { opacity: 1; }
+        76% { opacity: 0.9; }
+        77% { opacity: 1; }
+    }
+
+    .game-over-content p, .start-content p {
+        font-size: clamp(0.55rem, 2.2vw, 0.85rem);
+        margin: 10px 0;
+        color: #FFD700;
+        text-shadow: 0 0 10px #FFD700;
+        line-height: 1.6;
+    }
+
+    .restart-btn, .start-btn, .share-btn, .donate-btn {
+        margin: 10px 5px;
+        padding: 12px 25px;
+        font-size: clamp(0.6rem, 2.2vw, 0.9rem);
+        font-family: 'Press Start 2P', cursive;
+        background: linear-gradient(135deg, #FFD700, #FF0000);
+        color: #000;
+        border: 3px solid #FFA500;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: 
+            0 0 25px rgba(255, 215, 0, 0.9),
+            0 0 50px rgba(255, 0, 0, 0.6);
+        text-transform: uppercase;
+        touch-action: manipulation;
+        font-weight: bold;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .donate-btn {
+        background: linear-gradient(135deg, #0070BA, #003087);
+        color: #FFF;
+        border-color: #0070BA;
+        box-shadow: 
+            0 0 20px rgba(0, 112, 186, 0.8),
+            0 0 40px rgba(0, 48, 135, 0.5);
+    }
+
+    .restart-btn:active, .start-btn:active, .share-btn:active, .donate-btn:active {
+        transform: scale(0.95);
+    }
+
+    .controls-help {
+        background: rgba(255, 215, 0, 0.2);
+        padding: 12px;
+        border-radius: 10px;
+        margin: 12px 0;
+        border: 2px solid #FFD700;
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+    }
+
+    .disclaimer {
+        font-size: 0.45rem;
+        color: rgba(255, 215, 0, 0.6);
+        margin-top: 15px;
+        line-height: 1.4;
+    }
+
+    .button-group {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 15px;
+    }
+
+    #secretEasterEgg {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+    }
+
+    .secret-content {
+        text-align: center;
+        animation: secretShake 0.15s infinite;
+    }
+
+    @keyframes secretShake {
+        0%, 100% { transform: translate(0, 0) rotate(0deg); }
+        25% { transform: translate(-8px, 8px) rotate(-3deg); }
+        50% { transform: translate(8px, -8px) rotate(3deg); }
+        75% { transform: translate(-8px, -8px) rotate(-2deg); }
+    }
+
+    .secret-content h1 {
+        font-size: clamp(3.5rem, 15vw, 10rem);
+        color: #FFFFFF;
+        background: linear-gradient(45deg, #FF0000, #FFD700, #FF0000);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-shadow: none;
+        margin-bottom: 40px;
+        animation: secretPulse 0.4s infinite;
+        font-weight: bold;
+        letter-spacing: 0.1em;
+        filter: drop-shadow(0 0 30px #FF0000) drop-shadow(0 0 60px #FFD700);
+    }
+
+    @keyframes secretPulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.15); }
+    }
+
+    .secret-animation {
+        font-size: clamp(5rem, 20vw, 13rem);
+        margin-top: 30px;
+        animation: broomSwing 0.4s infinite;
+        filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.8));
+    }
+
+    @keyframes broomSwing {
+        0%, 100% { transform: rotate(-25deg) scale(1); }
+        50% { transform: rotate(25deg) scale(1.1); }
+    }
+
+    #tottiCelebration {
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: linear-gradient(135deg, rgba(255, 215, 0, 0.4), rgba(255, 0, 0, 0.4));
+        padding: 12px 25px;
+        border-radius: 15px;
+        border: 3px solid rgba(255, 215, 0, 0.8);
+        box-shadow: 
+            0 0 20px rgba(255, 215, 0, 0.6),
+            0 0 40px rgba(255, 0, 0, 0.4);
+        display: none;
+        z-index: 5000;
+        animation: tottiSlideIn 0.3s ease-out;
+        pointer-events: none;
+        backdrop-filter: blur(3px);
+    }
+
+    @keyframes tottiSlideIn {
+        from {
+            transform: translateX(-50%) translateY(-100px);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+    }
+
+    .totti-content {
+        text-align: center;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .totti-content .totti-emoji {
+        font-size: 2.5rem;
+        animation: tottiJump 0.6s infinite;
+    }
+
+    @keyframes tottiJump {
+        0%, 100% { transform: translateY(0) scale(1); }
+        50% { transform: translateY(-10px) scale(1.1); }
+    }
+
+    .totti-content h2 {
+        font-size: clamp(0.8rem, 3vw, 1.3rem);
+        color: #000;
+        margin: 0;
+        text-shadow: 
+            2px 2px 0 #FFD700,
+            -1px -1px 0 #FFF;
+        font-weight: bold;
+    }
+
+    .wolf-click-area {
+        display: inline-block;
+        cursor: pointer;
+        user-select: none;
+        transition: transform 0.1s;
+    }
+
+    .wolf-click-area:active {
+        transform: scale(0.95);
+    }
+</style>
+```
+
+</head>
+<body>
+    <div id="secretEasterEgg">
+        <div class="secret-content">
+            <h1>LAZIO MERDA</h1>
+            <div class="secret-animation">
+                🧹💨🐀
+            </div>
+        </div>
+    </div>
+
+```
+<div id="tottiCelebration">
+    <div class="totti-content">
+        <div class="totti-emoji">👑⚽</div>
+        <h2 id="tottiMessage">ER PUPONE APPROVA!</h2>
+    </div>
+</div>
+
+<div id="startScreen">
+    <div class="start-content">
+        <h2><span class="wolf-click-area" onclick="handleWolfClick()">🐺</span> MANGIA IL LAZIALE <span class="wolf-click-area" onclick="handleWolfClick()">🦅</span></h2>
+        <p>AS ROMA CLUB GINEVRA</p>
+        <div class="controls-help">
+            <p>TOCCA SINISTRA ⬅️</p>
+            <p>per sterzare a sinistra</p>
+            <p style="margin-top: 8px;">TOCCA DESTRA ➡️</p>
+            <p>per sterzare a destra</p>
+        </div>
+        <p style="font-size: 0.55rem; margin-top: 12px;">Il lupo corre sempre!</p>
+        <p style="font-size: 0.55rem;">🎅 Attento a Babbo Natale! 🔫</p>
+        <p style="font-size: 0.55rem;">⚽ Tocca il pallone per fare GOAL!</p>
+        
+        <button class="start-btn" onclick="startGame()">START</button>
+        <p style="font-size: 0.5rem; color: #FFD700; margin-top: 15px; text-shadow: 0 0 10px #FFD700;">by Serafino</p>
+        <p class="disclaimer">Fan-made game - Non affiliato con AS Roma o SS Lazio</p>
+    </div>
+</div>
+
+<div class="game-container">
+    <div class="header">
+        <h1>🐺 MANGIA IL LAZIALE 🦅</h1>
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-label">SCORE</div>
+                <div class="stat-value" id="score">0</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">HI-SCORE</div>
+                <div class="stat-value" id="highScore">0</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="game-wrapper">
+        <canvas id="gameCanvas"></canvas>
+    </div>
+
+    <div class="controls">
+        <div class="control-button left" ontouchstart="handleTurnLeft(event)" ontouchend="handleTouchEnd(event)" onclick="handleTurnLeft(event)">
+            ⬅️
+        </div>
+        <div class="control-button right" ontouchstart="handleTurnRight(event)" ontouchend="handleTouchEnd(event)" onclick="handleTurnRight(event)">
+            ➡️
+        </div>
+    </div>
+</div>
+
+<div id="gameOverScreen">
+    <div class="game-over-content">
+        <h2>GAME OVER!</h2>
+        <p>Laziali mangiati: <strong id="finalScore">0</strong></p>
+        <p id="recordMessage"></p>
+        <div class="button-group">
+            <button class="restart-btn" onclick="restartGame()">RESTART</button>
+            <button class="share-btn" onclick="shareScore()">📤 CONDIVIDI</button>
+        </div>
+        <div class="button-group">
+            <a href="https://www.paypal.com/paypalme/lanoceenrico" target="_blank" class="donate-btn">
+                ☕ OFFRIMI UN CAFFÈ
+            </a>
+        </div>
+        <p style="font-size: 0.5rem; color: #FFD700; margin-top: 12px; text-shadow: 0 0 10px #FFD700;">Created by Serafino</p>
+        <p class="disclaimer">Fan-made game - Non affiliato con AS Roma o SS Lazio</p>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    let lastTottiScore = 0;
+    let secretClickCount = 0;
+    let secretClickTimer = null;
+    
+    const tottiPhrases = [
+        "ER PUPONE APPROVA!",
+        "SEI FORTE COME TOTTI!",
+        "DAJE RAGAZZO!",
+        "COME ER CUCCHIAIO!",
+        "LEGGENDARIO!",
+        "CAPITALE!"
+    ];
+    
+    // Secret Easter Egg Handler
+    function handleWolfClick() {
+        secretClickCount++;
+        
+        if (secretClickTimer) {
+            clearTimeout(secretClickTimer);
+        }
+        
+        secretClickTimer = setTimeout(() => {
+            secretClickCount = 0;
+        }, 2000);
+        
+        if (secretClickCount >= 10) {
+            activateSecretEasterEgg();
+            secretClickCount = 0;
+        }
+    }
+
+    function activateSecretEasterEgg() {
+        document.getElementById('secretEasterEgg').style.display = 'flex';
+        
+        setTimeout(() => {
+            document.getElementById('secretEasterEgg').style.display = 'none';
+        }, 5000);
+    }
+
+    // Totti Celebration
+    function showTottiCelebration() {
+        const randomPhrase = tottiPhrases[Math.floor(Math.random() * tottiPhrases.length)];
+        document.getElementById('tottiMessage').textContent = randomPhrase;
+        document.getElementById('tottiCelebration').style.display = 'flex';
+        
+        createTottiParticles();
+        
+        setTimeout(() => {
+            document.getElementById('tottiCelebration').style.display = 'none';
+        }, 2000);
+    }
+
+    function createTottiParticles() {
+        for (let i = 0; i < 50; i++) {
+            setTimeout(() => {
+                const particle = document.createElement('div');
+                particle.style.position = 'fixed';
+                particle.style.left = '50%';
+                particle.style.top = '50%';
+                particle.style.width = '20px';
+                particle.style.height = '20px';
+                particle.style.fontSize = '20px';
+                particle.textContent = ['⭐', '💛', '❤️', '👑', '⚽'][i % 5];
+                particle.style.pointerEvents = 'none';
+                particle.style.zIndex = '99999';
+                document.body.appendChild(particle);
+
+                const angle = (Math.PI * 2 * i) / 50;
+                const distance = 200 + Math.random() * 200;
+                const tx = Math.cos(angle) * distance;
+                const ty = Math.sin(angle) * distance;
+
+                particle.animate([
+                    { 
+                        transform: 'translate(-50%, -50%) scale(0) rotate(0deg)', 
+                        opacity: 1 
+                    },
+                    { 
+                        transform: `translate(${tx}px, ${ty}px) scale(1.5) rotate(${Math.random() * 360}deg)`, 
+                        opacity: 0 
+                    }
+                ], {
+                    duration: 1500,
+                    easing: 'cubic-bezier(0, .9, .57, 1)'
+                }).onfinish = () => particle.remove();
+            }, i * 20);
+        }
+    }
+    
+    const CELL_SIZE = 25;
+    
+    function resizeCanvas() {
+        const maxWidth = window.innerWidth * 0.95; // RIDOTTO da 0.98 a 0.95
+        const maxHeight = window.innerHeight - 240; // +10px per sicurezza
+        
+        // Set minimum size for playability
+        const minSize = 350;
+        
+        let size = Math.min(maxWidth, maxHeight);
+        
+        // Don't go below minimum
+        if (size < minSize) {
+            size = minSize;
+        }
+        
+        size = Math.floor(size / CELL_SIZE) * CELL_SIZE;
+        
+        canvas.width = size;
+        canvas.height = size;
+        
+        return size;
+    }
+    
+    let CANVAS_SIZE = resizeCanvas();
+    let GRID_COUNT = Math.floor(CANVAS_SIZE / CELL_SIZE);
+    
+    window.addEventListener('resize', () => {
+        CANVAS_SIZE = resizeCanvas();
+        GRID_COUNT = Math.floor(CANVAS_SIZE / CELL_SIZE);
+        if (gameRunning) draw();
+    });
+    
+    let snake = [{x: 10, y: 10}];
+    let direction = {x: 1, y: 0};
+    let nextDirection = {x: 1, y: 0};
+    let food = {x: 15, y: 15};
+    let score = 0;
+    let highScore = localStorage.getItem('derbySnakeHighScore') || 0;
+    let gameRunning = false;
+    let gameSpeed = 180;
+    let baseSpeed = 180;
+    let santaSleigh = null;
+    let santaSpawnChance = 0.004;
+    let ball = null;
+    let goalAnimation = null;
+    let soccerFieldActive = false;
+    
+    document.getElementById('highScore').textContent = highScore;
+
+    function handleTurnLeft(e) {
+        e.preventDefault();
+        if (!gameRunning) return;
+        turnLeft();
+    }
+
+    function handleTurnRight(e) {
+        e.preventDefault();
+        if (!gameRunning) return;
+        turnRight();
+    }
+
+    function handleTouchEnd(e) {
+        e.preventDefault();
+    }
+    
+    function turnLeft() {
+        if (direction.x === 1 && direction.y === 0) nextDirection = {x: 0, y: -1};
+        else if (direction.x === 0 && direction.y === -1) nextDirection = {x: -1, y: 0};
+        else if (direction.x === -1 && direction.y === 0) nextDirection = {x: 0, y: 1};
+        else if (direction.x === 0 && direction.y === 1) nextDirection = {x: 1, y: 0};
+    }
+
+    function turnRight() {
+        if (direction.x === 1 && direction.y === 0) nextDirection = {x: 0, y: 1};
+        else if (direction.x === 0 && direction.y === 1) nextDirection = {x: -1, y: 0};
+        else if (direction.x === -1 && direction.y === 0) nextDirection = {x: 0, y: -1};
+        else if (direction.x === 0 && direction.y === -1) nextDirection = {x: 1, y: 0};
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (!gameRunning) return;
+        if (e.key === 'ArrowLeft') {
+            turnLeft();
+            e.preventDefault();
+        }
+        else if (e.key === 'ArrowRight') {
+            turnRight();
+            e.preventDefault();
+        }
+    });
+    
+    function createSanta() {
+        const side = Math.floor(Math.random() * 4);
+        let startX, startY, velX, velY;
+        
+        switch(side) {
+            case 0:
+                startX = Math.floor(Math.random() * GRID_COUNT);
+                startY = -3;
+                velX = (Math.random() - 0.5) * 0.4;
+                velY = 0.25;
+                break;
+            case 1:
+                startX = GRID_COUNT + 3;
+                startY = Math.floor(Math.random() * GRID_COUNT);
+                velX = -0.25;
+                velY = (Math.random() - 0.5) * 0.4;
+                break;
+            case 2:
+                startX = Math.floor(Math.random() * GRID_COUNT);
+                startY = GRID_COUNT + 3;
+                velX = (Math.random() - 0.5) * 0.4;
+                velY = -0.25;
+                break;
+            case 3:
+                startX = -3;
+                startY = Math.floor(Math.random() * GRID_COUNT);
+                velX = 0.25;
+                velY = (Math.random() - 0.5) * 0.4;
+                break;
+        }
+        
+        santaSleigh = {
+            x: startX,
+            y: startY,
+            velX: velX,
+            velY: velY
+        };
+    }
+
+    function updateSanta() {
+        if (santaSleigh) {
+            santaSleigh.x += santaSleigh.velX;
+            santaSleigh.y += santaSleigh.velY;
+            
+            if (gameRunning && snake.length > 0) {
+                const head = snake[0];
+                const dx = Math.abs(santaSleigh.x - head.x);
+                const dy = Math.abs(santaSleigh.y - head.y);
+                
+                if (dx < 1.5 && dy < 1.5 && !ball) {
+                    spawnBall();
+                }
+            }
+            
+            if (santaSleigh.x < -4 || santaSleigh.x > GRID_COUNT + 4 ||
+                santaSleigh.y < -4 || santaSleigh.y > GRID_COUNT + 4) {
+                santaSleigh = null;
+            }
+        }
+        
+        if (!santaSleigh && Math.random() < santaSpawnChance) {
+            createSanta();
+        }
+    }
+
+    function drawSanta() {
+        if (!santaSleigh) return;
+        
+        const x = santaSleigh.x * CELL_SIZE;
+        const y = santaSleigh.y * CELL_SIZE;
+        
+        ctx.shadowBlur = 25;
+        ctx.shadowColor = '#FFD700';
+        ctx.font = `${CELL_SIZE * 1.8}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('🛷', x, y);
+        
+        ctx.font = `${CELL_SIZE * 1.4}px Arial`;
+        ctx.fillText('🎅', x - CELL_SIZE * 0.4, y - CELL_SIZE * 0.3);
+        
+        ctx.font = `bold ${CELL_SIZE * 0.6}px Arial`;
+        ctx.fillStyle = '#FFD700';
+        ctx.strokeStyle = '#DC143C';
+        ctx.lineWidth = 3;
+        ctx.strokeText('10', x - CELL_SIZE * 0.4, y + CELL_SIZE * 0.15);
+        ctx.fillText('10', x - CELL_SIZE * 0.4, y + CELL_SIZE * 0.15);
+        
+        ctx.font = `${CELL_SIZE * 0.8}px Arial`;
+        ctx.fillText('🔫', x + CELL_SIZE * 0.35, y - CELL_SIZE * 0.15);
+        
+        ctx.shadowBlur = 0;
+    }
+
+    function spawnBall() {
+        ball = {
+            x: Math.floor(Math.random() * GRID_COUNT),
+            y: Math.floor(Math.random() * GRID_COUNT)
+        };
+        soccerFieldActive = true;
+    }
+
+    function drawBall() {
+        if (!ball) return;
+        
+        const x = ball.x * CELL_SIZE;
+        const y = ball.y * CELL_SIZE;
+        
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = '#FFFFFF';
+        ctx.font = `${CELL_SIZE * 1.4}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('⚽', x + CELL_SIZE / 2, y + CELL_SIZE / 2);
+        
+        ctx.shadowBlur = 0;
+    }
+
+    function checkBallCollision() {
+        if (!ball || !gameRunning) return;
+        
+        const head = snake[0];
+        if (head.x === ball.x && head.y === ball.y) {
+            startGoalAnimation();
+            ball = null;
+        }
+    }
+
+    function startGoalAnimation() {
+        score += 10;
+        document.getElementById('score').textContent = score;
+        
+        goalAnimation = {
+            ballX: snake[0].x * CELL_SIZE + CELL_SIZE / 2,
+            ballY: snake[0].y * CELL_SIZE + CELL_SIZE / 2,
+            targetX: CELL_SIZE,
+            targetY: CANVAS_SIZE / 2,
+            progress: 0,
+            duration: 7000,
+            startTime: Date.now(),
+            goalScored: false,
+            celebrating: false
+        };
+    }
+
+    function drawGoalAnimation() {
+        if (!goalAnimation) return;
+        
+        const elapsed = Date.now() - goalAnimation.startTime;
+        const progress = Math.min(elapsed / goalAnimation.duration, 1);
+        
+        if (progress < 0.85) {
+            const adjustedProgress = progress / 0.85;
+            const easeProgress = 1 - Math.pow(1 - adjustedProgress, 3);
+            
+            const currentX = goalAnimation.ballX + (goalAnimation.targetX - goalAnimation.ballX) * easeProgress;
+            const currentY = goalAnimation.ballY + (goalAnimation.targetY - goalAnimation.ballY) * easeProgress;
+            const arcHeight = Math.sin(adjustedProgress * Math.PI) * CELL_SIZE * 3;
+            
+            ctx.shadowBlur = 30;
+            ctx.shadowColor = '#FFFFFF';
+            
+            for (let i = 0; i < 3; i++) {
+                const trailProgress = Math.max(0, easeProgress - i * 0.05);
+                const trailX = goalAnimation.ballX + (goalAnimation.targetX - goalAnimation.ballX) * trailProgress;
+                const trailY = goalAnimation.ballY + (goalAnimation.targetY - goalAnimation.ballY) * trailProgress - Math.sin(trailProgress * Math.PI) * CELL_SIZE * 3;
+                
+                ctx.globalAlpha = 0.3 - i * 0.1;
+                ctx.font = `${CELL_SIZE * 1.2}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('⚽', trailX, trailY);
+            }
+            
+            ctx.globalAlpha = 1;
+            ctx.font = `${CELL_SIZE * 1.6}px Arial`;
+            ctx.fillText('⚽', currentX, currentY - arcHeight);
+            ctx.shadowBlur = 0;
+        } 
+        else if (!goalAnimation.goalScored) {
+            goalAnimation.goalScored = true;
+            goalAnimation.celebrating = true;
+            createGoalParticles();
+        }
+        
+        if (goalAnimation.celebrating) {
+            ctx.font = 'bold 50px "Press Start 2P"';
+            ctx.fillStyle = '#FFD700';
+            ctx.strokeStyle = '#DC143C';
+            ctx.lineWidth = 5;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            const bounce = Math.sin(Date.now() / 100) * 5;
+            const goalY = CANVAS_SIZE / 2 - 100;
+            
+            ctx.shadowBlur = 30;
+            ctx.shadowColor = '#FFD700';
+            ctx.strokeText('GOAL!', CANVAS_SIZE / 2, goalY + bounce);
+            ctx.fillText('GOAL!', CANVAS_SIZE / 2, goalY + bounce);
+            
+            ctx.font = 'bold 35px "Press Start 2P"';
+            const dajeY = CANVAS_SIZE / 2 - 40;
+            ctx.strokeText('DAJE ROMA DAJE!', CANVAS_SIZE / 2, dajeY - bounce);
+            ctx.fillText('DAJE ROMA DAJE!', CANVAS_SIZE / 2, dajeY - bounce);
+            ctx.shadowBlur = 0;
+            
+            if (santaSleigh) {
+                const x = santaSleigh.x * CELL_SIZE;
+                const y = santaSleigh.y * CELL_SIZE;
+                const santaBounce = Math.sin(Date.now() / 80) * 15;
+                
+                ctx.shadowBlur = 35;
+                ctx.shadowColor = '#FFD700';
+                ctx.font = `${CELL_SIZE * 1.8}px Arial`;
+                ctx.fillText('🎅', x, y - santaBounce);
+                
+                ctx.font = `${CELL_SIZE * 1}px Arial`;
+                ctx.fillText('🙌', x + CELL_SIZE * 0.7, y - CELL_SIZE * 0.7 - santaBounce);
+                ctx.fillText('🙌', x - CELL_SIZE * 0.7, y - CELL_SIZE * 0.7 - santaBounce);
+                ctx.shadowBlur = 0;
+            }
+        }
+        
+        if (progress >= 1) {
+            goalAnimation = null;
+            soccerFieldActive = false;
+        }
+    }
+
+    function createGoalParticles() {
+        const centerX = CANVAS_SIZE / 2;
+        const centerY = CANVAS_SIZE / 2 - 80;
+        const canvasRect = canvas.getBoundingClientRect();
+        const screenX = canvasRect.left + centerX;
+        const screenY = canvasRect.top + centerY;
+        
+        for (let i = 0; i < 30; i++) {
+            const angle = (Math.PI * 2 * i) / 30;
+            const particle = document.createElement('div');
+            particle.style.position = 'fixed';
+            particle.style.left = screenX + 'px';
+            particle.style.top = screenY + 'px';
+            particle.style.width = '16px';
+            particle.style.height = '16px';
+            
+            const colors = ['#FFD700', '#FFFF00', '#FF0000', '#FF4500', '#FFA500'];
+            particle.style.background = colors[i % colors.length];
+            particle.style.borderRadius = '50%';
+            particle.style.pointerEvents = 'none';
+            particle.style.zIndex = '9999';
+            particle.style.boxShadow = `0 0 30px ${colors[i % colors.length]}`;
+            document.body.appendChild(particle);
+
+            const tx = Math.cos(angle) * 150;
+            const ty = Math.sin(angle) * 150;
+
+            particle.animate([
+                { transform: 'translate(0, 0) scale(1)', opacity: 1 },
+                { transform: `translate(${tx}px, ${ty}px) scale(0)`, opacity: 0 }
+            ], {
+                duration: 1200,
+                easing: 'ease-out'
+            }).onfinish = () => particle.remove();
+        }
+    }
+    
+    function drawGrid() {
+        for (let i = 0; i < GRID_COUNT; i++) {
+            for (let j = 0; j < GRID_COUNT; j++) {
+                if ((i + j) % 2 === 0) {
+                    ctx.fillStyle = 'rgba(255, 215, 0, 0.25)'; // ANCORA PIÙ VISIBILE
+                } else {
+                    ctx.fillStyle = 'rgba(255, 0, 0, 0.20)'; // ANCORA PIÙ VISIBILE
+                }
+                ctx.fillRect(i * CELL_SIZE, j * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+            }
+        }
+        
+        ctx.strokeStyle = 'rgba(255, 215, 0, 0.5)'; // MOLTO PIÙ VISIBILE
+        ctx.lineWidth = 2; // PIÙ SPESSE
+        for (let i = 0; i <= GRID_COUNT; i++) {
+            ctx.beginPath();
+            ctx.moveTo(i * CELL_SIZE, 0);
+            ctx.lineTo(i * CELL_SIZE, CANVAS_SIZE);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(0, i * CELL_SIZE);
+            ctx.lineTo(CANVAS_SIZE, i * CELL_SIZE);
+            ctx.stroke();
+        }
+    }
+
+    function drawSoccerField() {
+        ctx.fillStyle = '#1a4d1a';
+        ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+        
+        ctx.fillStyle = '#0d3d0d';
+        for (let i = 0; i < GRID_COUNT; i += 2) {
+            ctx.fillRect(i * CELL_SIZE, 0, CELL_SIZE, CANVAS_SIZE);
+        }
+        
+        ctx.strokeStyle = '#FFD700';
+        ctx.lineWidth = 4; // PIÙ SPESSE
+        ctx.strokeRect(CELL_SIZE, CELL_SIZE, CANVAS_SIZE - CELL_SIZE * 2, CANVAS_SIZE - CELL_SIZE * 2);
+        
+        ctx.beginPath();
+        ctx.moveTo(CANVAS_SIZE / 2, CELL_SIZE);
+        ctx.lineTo(CANVAS_SIZE / 2, CANVAS_SIZE - CELL_SIZE);
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.arc(CANVAS_SIZE / 2, CANVAS_SIZE / 2, CELL_SIZE * 3, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        ctx.strokeStyle = '#87CEEB';
+        ctx.lineWidth = 5; // PIÙ SPESSA
+        
+        const goalWidth = CELL_SIZE * 1.5;
+        const goalHeight = CELL_SIZE * 6;
+        const goalY = (CANVAS_SIZE - goalHeight) / 2;
+        
+        ctx.strokeRect(0, goalY, goalWidth, goalHeight);
+        
+        ctx.strokeStyle = 'rgba(135, 206, 235, 0.6)'; // PIÙ VISIBILE
+        ctx.lineWidth = 2;
+        for (let i = 0; i < 6; i++) {
+            ctx.beginPath();
+            ctx.moveTo(0, goalY + (i * goalHeight / 6));
+            ctx.lineTo(goalWidth, goalY + (i * goalHeight / 6));
+            ctx.stroke();
+        }
+        
+        ctx.strokeStyle = '#FFD700';
+        ctx.lineWidth = 4; // PIÙ SPESSA
+        ctx.strokeRect(CELL_SIZE, goalY - CELL_SIZE, CELL_SIZE * 4, goalHeight + CELL_SIZE * 2);
+    }
+
+    function drawTail(segments) {
+        if (segments.length < 2) return;
+        
+        ctx.save();
+        
+        for (let i = 1; i < segments.length; i++) {
+            const segment = segments[i];
+            const x = segment.x * CELL_SIZE;
+            const y = segment.y * CELL_SIZE;
+            
+            const segmentRatio = i / segments.length;
+            const width = CELL_SIZE * (1 - segmentRatio * 0.65);
+            const offset = (CELL_SIZE - width) / 2;
+            
+            const yellowAmount = Math.max(0, 1 - segmentRatio * 1.2);
+            const redAmount = Math.min(1, segmentRatio * 1.5);
+            
+            const r = Math.floor(255 * redAmount + 255 * yellowAmount);
+            const g = Math.floor(215 * yellowAmount);
+            const b = 0;
+            
+            ctx.shadowBlur = 15 * (1 - segmentRatio * 0.4);
+            ctx.shadowColor = `rgb(${r}, ${g}, ${b})`;
+            
+            const gradient = ctx.createRadialGradient(
+                x + CELL_SIZE / 2, y + CELL_SIZE / 2, 0,
+                x + CELL_SIZE / 2, y + CELL_SIZE / 2, width / 2
+            );
+            gradient.addColorStop(0, `rgb(${Math.min(255, r + 30)}, ${Math.min(255, g + 30)}, 50)`);
+            gradient.addColorStop(0.6, `rgb(${r}, ${g}, ${b})`);
+            gradient.addColorStop(1, `rgb(${Math.max(0, r - 40)}, ${Math.max(0, g - 40)}, ${b})`);
+            
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.roundRect(x + offset, y + offset, width, width, width * 0.35);
+            ctx.fill();
+            
+            ctx.strokeStyle = `rgb(${Math.max(0, r - 60)}, ${Math.max(0, g - 60)}, ${b})`;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            if (i % 2 === 0) {
+                const highlightGrad = ctx.createLinearGradient(
+                    x + offset, y + offset,
+                    x + offset + width * 0.3, y + offset + width * 0.3
+                );
+                highlightGrad.addColorStop(0, `rgba(255, 255, 100, ${0.4 * (1 - segmentRatio)})`);
+                highlightGrad.addColorStop(1, 'rgba(255, 255, 100, 0)');
+                
+                ctx.fillStyle = highlightGrad;
+                ctx.fillRect(
+                    x + offset + width * 0.15,
+                    y + offset + width * 0.15,
+                    width * 0.4,
+                    width * 0.15
+                );
+            }
+        }
+        
+        ctx.shadowBlur = 0;
+        ctx.restore();
+    }
+
+    function drawSnake() {
+        drawTail(snake);
+        
+        const head = snake[0];
+        const x = head.x * CELL_SIZE;
+        const y = head.y * CELL_SIZE;
+        
+        // SOLID background circle for MAXIMUM visibility
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.4)'; // PIÙ OPACO
+        ctx.beginPath();
+        ctx.arc(x + CELL_SIZE / 2, y + CELL_SIZE / 2, CELL_SIZE * 0.8, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Gold glow background
+        ctx.fillStyle = 'rgba(255, 215, 0, 0.3)';
+        ctx.beginPath();
+        ctx.arc(x + CELL_SIZE / 2, y + CELL_SIZE / 2, CELL_SIZE * 0.9, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.shadowBlur = 35; // PIÙ GLOW
+        ctx.shadowColor = '#FFD700';
+        ctx.font = `${CELL_SIZE * 1.8}px Arial`; // PIÙ GRANDE
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        ctx.fillText('🐺', x + CELL_SIZE / 2, y + CELL_SIZE / 2);
+        ctx.shadowColor = '#FF0000';
+        ctx.shadowBlur = 25;
+        ctx.fillText('🐺', x + CELL_SIZE / 2, y + CELL_SIZE / 2);
+        
+        ctx.shadowBlur = 0;
+    }
+
+    function drawFood() {
+        const x = food.x * CELL_SIZE;
+        const y = food.y * CELL_SIZE;
+        
+        const pulse = Math.sin(Date.now() / 150) * 6;
+        
+        // SOLID background circle for MAXIMUM visibility
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.4)'; // PIÙ OPACO
+        ctx.beginPath();
+        ctx.arc(x + CELL_SIZE / 2, y + CELL_SIZE / 2, CELL_SIZE * 0.8 + pulse / 2, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Yellow glow background
+        ctx.fillStyle = 'rgba(255, 215, 0, 0.3)';
+        ctx.beginPath();
+        ctx.arc(x + CELL_SIZE / 2, y + CELL_SIZE / 2, CELL_SIZE * 0.9 + pulse, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.shadowBlur = 40 + pulse; // PIÙ GLOW
+        ctx.shadowColor = '#FFD700';
+        ctx.font = `${CELL_SIZE * 1.8 + pulse}px Arial`; // PIÙ GRANDE
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('🦅', x + CELL_SIZE / 2, y + CELL_SIZE / 2);
+        
+        ctx.shadowBlur = 0;
+    }
+
+    function generateFood() {
+        let newFood;
+        do {
+            newFood = {
+                x: Math.floor(Math.random() * GRID_COUNT),
+                y: Math.floor(Math.random() * GRID_COUNT)
+            };
+        } while (snake.some(segment => segment.x === newFood.x && segment.y === newFood.y));
+        food = newFood;
+    }
+
+    function updateGame() {
+        if (!gameRunning) return;
+
+        direction = nextDirection;
+
+        const head = {
+            x: snake[0].x + direction.x,
+            y: snake[0].y + direction.y
+        };
+        
+        if (head.x < 0 || head.x >= GRID_COUNT || 
+            head.y < 0 || head.y >= GRID_COUNT) {
+            gameOver();
+            return;
+        }
+
+        if (snake.some(segment => segment.x === head.x && segment.y === head.y)) {
+            gameOver();
+            return;
+        }
+
+        snake.unshift(head);
+
+        if (head.x === food.x && head.y === food.y) {
+            score++;
+            document.getElementById('score').textContent = score;
+            
+            // Check for Totti celebration every 10 points
+            if (score % 10 === 0 && score !== lastTottiScore) {
+                lastTottiScore = score;
+                setTimeout(() => showTottiCelebration(), 500);
+            }
+            
+            generateFood();
+            gameSpeed = Math.max(50, baseSpeed - score * 2.5);
+            createParticles(head.x, head.y);
+        } else {
+            snake.pop();
+        }
+
+        updateSanta();
+        checkBallCollision();
+        draw();
+    }
+
+    function createParticles(gridX, gridY) {
+        const x = gridX * CELL_SIZE + CELL_SIZE / 2;
+        const y = gridY * CELL_SIZE + CELL_SIZE / 2;
+        const canvasRect = canvas.getBoundingClientRect();
+        const screenX = canvasRect.left + x;
+        const screenY = canvasRect.top + y;
+        
+        for (let i = 0; i < 20; i++) {
+            const angle = (Math.PI * 2 * i) / 20;
+            const particle = document.createElement('div');
+            particle.style.position = 'fixed';
+            particle.style.left = screenX + 'px';
+            particle.style.top = screenY + 'px';
+            particle.style.width = '14px';
+            particle.style.height = '14px';
+            
+            const colors = ['#FFD700', '#FFFF00', '#FF0000', '#FF4500', '#FFA500'];
+            particle.style.background = colors[i % colors.length];
+            particle.style.borderRadius = '50%';
+            particle.style.pointerEvents = 'none';
+            particle.style.zIndex = '999';
+            particle.style.boxShadow = `0 0 25px ${colors[i % colors.length]}`;
+            document.body.appendChild(particle);
+
+            const tx = Math.cos(angle) * 90;
+            const ty = Math.sin(angle) * 90;
+
+            particle.animate([
+                { transform: 'translate(0, 0) scale(1)', opacity: 1 },
+                { transform: `translate(${tx}px, ${ty}px) scale(0)`, opacity: 0 }
+            ], {
+                duration: 900,
+                easing: 'ease-out'
+            }).onfinish = () => particle.remove();
+        }
+    }
+
+    function draw() {
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+        
+        if (soccerFieldActive) {
+            drawSoccerField();
+        } else {
+            drawGrid();
+        }
+        
+        drawSanta();
+        drawFood();
+        drawBall();
+        drawSnake();
+        drawGoalAnimation();
+    }
+
+    function gameOver() {
+        gameRunning = false;
+        
+        if (score > highScore) {
+            highScore = score;
+            localStorage.setItem('derbySnakeHighScore', highScore);
+            document.getElementById('highScore').textContent = highScore;
+            document.getElementById('recordMessage').textContent = 'NEW HI-SCORE!';
+            document.getElementById('recordMessage').style.color = '#FFD700';
+        } else {
+            document.getElementById('recordMessage').textContent = 'Try Again!';
+            document.getElementById('recordMessage').style.color = '#FFD700';
+        }
+        
+        document.getElementById('finalScore').textContent = score;
+        document.getElementById('gameOverScreen').style.display = 'flex';
+    }
+
+    function restartGame() {
+        snake = [{x: Math.floor(GRID_COUNT / 2), y: Math.floor(GRID_COUNT / 2)}];
+        direction = {x: 1, y: 0};
+        nextDirection = {x: 1, y: 0};
+        score = 0;
+        lastTottiScore = 0;
+        gameSpeed = baseSpeed;
+        santaSleigh = null;
+        ball = null;
+        goalAnimation = null;
+        soccerFieldActive = false;
+        document.getElementById('score').textContent = score;
+        generateFood();
+        document.getElementById('gameOverScreen').style.display = 'none';
+        gameRunning = true;
+        gameLoop();
+    }
+
+    function startGame() {
+        document.getElementById('startScreen').style.display = 'none';
+        snake = [{x: Math.floor(GRID_COUNT / 2), y: Math.floor(GRID_COUNT / 2)}];
+        gameRunning = true;
+        generateFood();
+        draw();
+        gameLoop();
+    }
+
+    function shareScore() {
+        const text = `🐺 Ho fatto ${score} punti in Derby Snake - Mangia l'Aquilotto! Batti il mio record! DAJE ROMA DAJE! 💛❤️`;
+        const url = window.location.href;
+        
+        if (navigator.share) {
+            navigator.share({
+                title: 'Derby Snake',
+                text: text,
+                url: url
+            }).catch(() => {});
+        } else {
+            const shareUrl = `https://wa.me/?text=${encodeURIComponent(text + ' ' + url)}`;
+            window.open(shareUrl, '_blank');
+        }
+    }
+
+    function gameLoop() {
+        if (!gameRunning) return;
+        updateGame();
+        setTimeout(gameLoop, gameSpeed);
+    }
+
+    draw();
+</script>
+```
+
+</body>
+</html>
