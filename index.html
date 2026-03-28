@@ -609,9 +609,10 @@
     wolfImg.src = 'wolf-icon.png';
     const gasperiniImg = new Image();
     gasperiniImg.src = 'gasperini.png';
+    const tottiImg = new Image();
+    tottiImg.src = 'totti-emoji.png';
 
     let lastTottiScore = 0;
-    const tottiEmoji = '🐺'; // placeholder — verrà sostituito con immagine Totti
     let secretClickCount = 0;
     let secretClickTimer = null;
     let backgroundMusic = null;
@@ -1400,18 +1401,20 @@
             ctx.fillText('DAJE ROMA DAJE!', CANVAS_SIZE / 2, dajeY - bounce);
             ctx.shadowBlur = 0;
             
-            // Totti esulta 🐺
-            const tottiX = CANVAS_SIZE * 0.5;
-            const tottiY = CANVAS_SIZE * 0.72;
+            // Totti esulta
+            const tottiSize = CELL_SIZE * 4;
+            const tottiX = CANVAS_SIZE * 0.5 - tottiSize / 2;
             const tottiBounce = Math.sin(Date.now() / 80) * 12;
+            const tottiY = CANVAS_SIZE * 0.65 - tottiSize / 2 - tottiBounce;
             ctx.shadowBlur = 35;
             ctx.shadowColor = '#FFD700';
-            ctx.font = `${CELL_SIZE * 2.2}px Arial`;
-            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            ctx.fillText(tottiEmoji, tottiX, tottiY - tottiBounce);
-            ctx.font = `${CELL_SIZE * 0.9}px Arial`;
-            ctx.fillText('🙌', tottiX + CELL_SIZE * 1.2, tottiY - CELL_SIZE * 0.8 - tottiBounce);
-            ctx.fillText('🙌', tottiX - CELL_SIZE * 1.2, tottiY - CELL_SIZE * 0.8 - tottiBounce);
+            if (tottiImg.complete && tottiImg.naturalWidth > 0) {
+                ctx.drawImage(tottiImg, tottiX, tottiY, tottiSize, tottiSize);
+            } else {
+                ctx.font = `${CELL_SIZE * 2.2}px Arial`;
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText('🙌', CANVAS_SIZE * 0.5, CANVAS_SIZE * 0.65 - tottiBounce);
+            }
             ctx.shadowBlur = 0;
         }
         
