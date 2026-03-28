@@ -1236,29 +1236,26 @@
         const x = head.x * CELL_SIZE;
         const y = head.y * CELL_SIZE;
         
-        // SOLID background circle
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)'; // PIÙ OPACO
+        // Cerchio oro solido come sfondo
+        ctx.fillStyle = '#FFD700';
         ctx.beginPath();
-        ctx.arc(x + CELL_SIZE / 2, y + CELL_SIZE / 2, CELL_SIZE * 0.7, 0, Math.PI * 2);
+        ctx.arc(x + CELL_SIZE / 2, y + CELL_SIZE / 2, CELL_SIZE * 0.75, 0, Math.PI * 2);
         ctx.fill();
-        
-        // Gold glow background - PIÙ PICCOLO
-        ctx.fillStyle = 'rgba(255, 215, 0, 0.2)'; // MENO OPACO
-        ctx.beginPath();
-        ctx.arc(x + CELL_SIZE / 2, y + CELL_SIZE / 2, CELL_SIZE * 0.8, 0, Math.PI * 2);
-        ctx.fill();
-        
-        ctx.shadowBlur = 30; // RIDOTTO glow
+
+        // Bordo rosso
+        ctx.strokeStyle = '#DC143C';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        // Glow oro
+        ctx.shadowBlur = 25;
         ctx.shadowColor = '#FFD700';
-        ctx.font = `${CELL_SIZE * 1.8}px Arial`;
+        ctx.font = `${CELL_SIZE * 1.6}px Arial`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        
+
         ctx.fillText('🐺', x + CELL_SIZE / 2, y + CELL_SIZE / 2);
-        ctx.shadowColor = '#FF0000';
-        ctx.shadowBlur = 20;
-        ctx.fillText('🐺', x + CELL_SIZE / 2, y + CELL_SIZE / 2);
-        
+
         ctx.shadowBlur = 0;
     }
 
