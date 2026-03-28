@@ -604,9 +604,11 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
-    // Preload wolf image
+    // Preload images
     const wolfImg = new Image();
     wolfImg.src = 'wolf-icon.png';
+    const gasperiniImg = new Image();
+    gasperiniImg.src = 'gasperini.png';
 
     let lastTottiScore = 0;
     let secretClickCount = 0;
@@ -783,6 +785,9 @@
     let baseSpeed = 180;
     let santaSleigh = null;
     let santaSpawnChance = 0.004;
+    let gasperini = null;
+    let gasperiniSpawnChance = 0.003;
+    let gasperiniAngerTimer = 0;
     let ball = null;
     let goalAnimation = null;
     let soccerFieldActive = false;
@@ -898,30 +903,102 @@
 
     function drawSanta() {
         if (!santaSleigh) return;
-        
         const x = santaSleigh.x * CELL_SIZE;
         const y = santaSleigh.y * CELL_SIZE;
-        
         ctx.shadowBlur = 25;
         ctx.shadowColor = '#FFD700';
         ctx.font = `${CELL_SIZE * 1.8}px Arial`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText('🛷', x, y);
-        
         ctx.font = `${CELL_SIZE * 1.4}px Arial`;
         ctx.fillText('🎅', x - CELL_SIZE * 0.4, y - CELL_SIZE * 0.3);
-        
         ctx.font = `bold ${CELL_SIZE * 0.6}px Arial`;
         ctx.fillStyle = '#FFD700';
         ctx.strokeStyle = '#DC143C';
         ctx.lineWidth = 3;
         ctx.strokeText('10', x - CELL_SIZE * 0.4, y + CELL_SIZE * 0.15);
         ctx.fillText('10', x - CELL_SIZE * 0.4, y + CELL_SIZE * 0.15);
-        
         ctx.font = `${CELL_SIZE * 0.8}px Arial`;
         ctx.fillText('🔫', x + CELL_SIZE * 0.35, y - CELL_SIZE * 0.15);
-        
+        ctx.shadowBlur = 0;
+    }
+
+    // ── GASPERINI ──
+    function createGasperini() {
+        const side = Math.floor(Math.random() * 4);
+        let sx, sy, vx, vy;
+        const spd = 0.18 + Math.random() * 0.12;
+        switch(side) {
+            case 0: sx = Math.floor(Math.random()*GRID_COUNT); sy = -3; vx = (Math.random()-0.5)*0.2; vy = spd; break;
+            case 1: sx = Math.floor(Math.random()*GRID_COUNT); sy = GRID_COUNT+3; vx = (Math.random()-0.5)*0.2; vy = -spd; break;
+            case 2: sx = GRID_COUNT+3; sy = Math.floor(Math.random()*GRID_COUNT); vx = -spd; vy = (Math.random()-0.5)*0.2; break;
+            default: sx = -3; sy = Math.floor(Math.random()*GRID_COUNT); vx = spd; vy = (Math.random()-0.5)*0.2; break;
+        }
+        gasperini = { x: sx, y: sy, velX: vx, velY: vy };
+    }
+
+    function updateGasperini() {
+        if (gasperini) {
+            gasperini.x += gasperini.velX;
+            gasperini.y += gasperini.velY;
+            gasperiniAngerTimer = Math.max(0, gasperiniAngerTimer - 1);
+
+            if (gameRunning && snake.length > 0) {
+                const head = snake[0];
+                const dx = Math.abs(gasperini.x - head.x);
+                const dy = Math.abs(gasperini.y - head.y);
+                if (dx < 1.2 && dy < 1.2) {
+                    // Gasperini colpisce il lupo — perde 3 punti
+                    score = Math.max(0, score - 3);
+                    document.getElementById('score').textContent = score;
+                    gasperiniAngerTimer = 30;
+                    gasperini = null;
+                    return;
+                }
+            }
+            if (gasperini.x < -5 || gasperini.x > GRID_COUNT+5 || gasperini.y < -5 || gasperini.y > GRID_COUNT+5) {
+                gasperini = null;
+            }
+        }
+        if (!gasperini && Math.random() < gasperiniSpawnChance) {
+            createGasperini();
+        }
+    }
+
+    function drawGasperini() {
+        if (!gasperini) return;
+        const x = gasperini.x * CELL_SIZE;
+        const y = gasperini.y * CELL_SIZE;
+        const sz = CELL_SIZE * 2.2;
+
+        // Glow rosso arrabbiatura
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = '#FF0000';
+
+        if (gasperiniImg.complete && gasperiniImg.naturalWidth > 0) {
+            // Clip circolare per sfondo
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(x + CELL_SIZE/2, y + CELL_SIZE/2, CELL_SIZE * 0.9, 0, Math.PI*2);
+            ctx.clip();
+            ctx.drawImage(gasperiniImg, x - sz*0.2, y - sz*0.25, sz, sz);
+            ctx.restore();
+        } else {
+            ctx.font = `${CELL_SIZE * 1.6}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('😡', x + CELL_SIZE/2, y + CELL_SIZE/2);
+        }
+
+        // Label "GASPERINI!" lampeggiante quando è in modalità arrabbiata
+        if (gasperiniAngerTimer > 0) {
+            ctx.font = `bold ${CELL_SIZE * 0.55}px Arial`;
+            ctx.fillStyle = '#FF0000';
+            ctx.textAlign = 'center';
+            ctx.fillText('CHE PALLE!', x + CELL_SIZE/2, y - CELL_SIZE * 0.6);
+        }
+
         ctx.shadowBlur = 0;
     }
 
@@ -1352,6 +1429,7 @@
         }
 
         updateSanta();
+        updateGasperini();
         checkBallCollision();
         draw();
     }
@@ -1404,6 +1482,7 @@
         }
         
         drawSanta();
+        drawGasperini();
         drawFood();
         drawBall();
         drawSnake();
@@ -1437,6 +1516,8 @@
         lastTottiScore = 0;
         gameSpeed = baseSpeed;
         santaSleigh = null;
+        gasperini = null;
+        gasperiniAngerTimer = 0;
         ball = null;
         goalAnimation = null;
         soccerFieldActive = false;
