@@ -785,8 +785,6 @@
     let gameRunning = false;
     let gameSpeed = 180;
     let baseSpeed = 180;
-    let santaSleigh = null;
-    let santaSpawnChance = 0.004;
     let gasperini = null;
     let gasperiniSpawnChance = 0.003;
     let gasperiniAngerTimer = 0;
@@ -838,94 +836,6 @@
         }
     });
     
-    function createSanta() {
-        const side = Math.floor(Math.random() * 4);
-        let startX, startY, velX, velY;
-        
-        switch(side) {
-            case 0:
-                startX = Math.floor(Math.random() * GRID_COUNT);
-                startY = -3;
-                velX = (Math.random() - 0.5) * 0.4;
-                velY = 0.25;
-                break;
-            case 1:
-                startX = GRID_COUNT + 3;
-                startY = Math.floor(Math.random() * GRID_COUNT);
-                velX = -0.25;
-                velY = (Math.random() - 0.5) * 0.4;
-                break;
-            case 2:
-                startX = Math.floor(Math.random() * GRID_COUNT);
-                startY = GRID_COUNT + 3;
-                velX = (Math.random() - 0.5) * 0.4;
-                velY = -0.25;
-                break;
-            case 3:
-                startX = -3;
-                startY = Math.floor(Math.random() * GRID_COUNT);
-                velX = 0.25;
-                velY = (Math.random() - 0.5) * 0.4;
-                break;
-        }
-        
-        santaSleigh = {
-            x: startX,
-            y: startY,
-            velX: velX,
-            velY: velY
-        };
-    }
-
-    function updateSanta() {
-        if (santaSleigh) {
-            santaSleigh.x += santaSleigh.velX;
-            santaSleigh.y += santaSleigh.velY;
-            
-            if (gameRunning && snake.length > 0) {
-                const head = snake[0];
-                const dx = Math.abs(santaSleigh.x - head.x);
-                const dy = Math.abs(santaSleigh.y - head.y);
-                
-                if (dx < 1.5 && dy < 1.5 && !ball) {
-                    spawnBall();
-                }
-            }
-            
-            if (santaSleigh.x < -4 || santaSleigh.x > GRID_COUNT + 4 ||
-                santaSleigh.y < -4 || santaSleigh.y > GRID_COUNT + 4) {
-                santaSleigh = null;
-            }
-        }
-        
-        if (!santaSleigh && Math.random() < santaSpawnChance) {
-            createSanta();
-        }
-    }
-
-    function drawSanta() {
-        if (!santaSleigh) return;
-        const x = santaSleigh.x * CELL_SIZE;
-        const y = santaSleigh.y * CELL_SIZE;
-        ctx.shadowBlur = 25;
-        ctx.shadowColor = '#FFD700';
-        ctx.font = `${CELL_SIZE * 1.8}px Arial`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('🛷', x, y);
-        ctx.font = `${CELL_SIZE * 1.4}px Arial`;
-        ctx.fillText('🎅', x - CELL_SIZE * 0.4, y - CELL_SIZE * 0.3);
-        ctx.font = `bold ${CELL_SIZE * 0.6}px Arial`;
-        ctx.fillStyle = '#FFD700';
-        ctx.strokeStyle = '#DC143C';
-        ctx.lineWidth = 3;
-        ctx.strokeText('10', x - CELL_SIZE * 0.4, y + CELL_SIZE * 0.15);
-        ctx.fillText('10', x - CELL_SIZE * 0.4, y + CELL_SIZE * 0.15);
-        ctx.font = `${CELL_SIZE * 0.8}px Arial`;
-        ctx.fillText('🔫', x + CELL_SIZE * 0.35, y - CELL_SIZE * 0.15);
-        ctx.shadowBlur = 0;
-    }
-
     // ── GASPERINI ──
     function createGasperini() {
         const side = Math.floor(Math.random() * 4);
@@ -1007,17 +917,21 @@
     // ════════════════════════════════════════════════
     let penaltyActive = false;
     let penaltyPhase = 'aim'; // 'aim' | 'power' | 'shoot' | 'result'
-    let penaltyAimX = 0.5;   // 0=sinistra, 1=destra
-    let penaltyAimY = 0.5;   // 0=alto, 1=basso
+    let penaltyAimX = 0.5;
+    let penaltyAimY = 0.35;
     let penaltyPower = 0;
     let penaltyPowerDir = 1;
-    let penaltyBallX = 0, penaltyBallY = 0;
     let penaltyBallTargetX = 0, penaltyBallTargetY = 0;
     let penaltyShootProgress = 0;
-    let penaltyResult = null;  // 'goal' | 'miss'
+    let penaltyResult = null;  // 'goal' | 'saved'
     let penaltyResultTimer = 0;
-    let penaltyPointerDown = false;
     let penaltyPowerInterval = null;
+    // Portiere
+    let keeperX = 0.5;   // 0=palo sx, 1=palo dx (relativo larghezza porta)
+    let keeperDiveTargetX = 0.5;
+    let keeperDiveTargetY = 0;
+    let keeperDiveProgress = 0;
+    let keeperDiving = false;
 
     function startPenalty() {
         penaltyActive = true;
@@ -1029,6 +943,9 @@
         penaltyResult = null;
         penaltyResultTimer = 0;
         penaltyShootProgress = 0;
+        keeperX = 0.5;
+        keeperDiving = false;
+        keeperDiveProgress = 0;
         clearInterval(penaltyPowerInterval);
 
         // Registra input
@@ -1083,22 +1000,28 @@
         penaltyPhase = 'shoot';
         penaltyShootProgress = 0;
 
-        // Posizione palla: centro basso canvas
-        penaltyBallX = CANVAS_SIZE / 2;
-        penaltyBallY = CANVAS_SIZE * 0.82;
-
         // Target nella porta in base alla mira
         const goalL = CANVAS_SIZE * 0.15, goalR = CANVAS_SIZE * 0.85;
         const goalT = CANVAS_SIZE * 0.18, goalB = CANVAS_SIZE * 0.52;
         penaltyBallTargetX = goalL + penaltyAimX * (goalR - goalL);
         penaltyBallTargetY = goalT + penaltyAimY * (goalB - goalT);
 
-        // Goal se power > 0.25 e mira dentro la porta (sempre dentro per definizione)
-        // Miss se power < 0.15 (tiro molle) o ai bordi con potenza sbagliata
-        const tooWeak = penaltyPower < 0.15;
-        const edgeX = penaltyAimX < 0.05 || penaltyAimX > 0.95;
-        const edgeY = penaltyAimY < 0.05 || penaltyAimY > 0.95;
-        penaltyResult = (tooWeak || (edgeX && penaltyPower < 0.4)) ? 'miss' : 'goal';
+        // Tiro parato se power < 0.3 (tiro molle — portiere reagisce)
+        const tooWeak = penaltyPower < 0.30;
+        penaltyResult = tooWeak ? 'saved' : 'goal';
+
+        // Portiere si tuffa
+        keeperDiving = true;
+        keeperDiveProgress = 0;
+        if (penaltyResult === 'saved') {
+            // Portiere si tuffa VERSO il punto puntato
+            keeperDiveTargetX = penaltyAimX;
+            keeperDiveTargetY = penaltyAimY;
+        } else {
+            // Portiere si tuffa nel verso OPPOSTO (fintato)
+            keeperDiveTargetX = 1 - penaltyAimX;
+            keeperDiveTargetY = penaltyAimY;
+        }
 
         requestAnimationFrame(penaltyLoop);
     }
@@ -1107,8 +1030,9 @@
         if (!penaltyActive) return;
         drawPenalty();
         if (penaltyPhase === 'shoot') {
-            penaltyShootProgress = Math.min(1, penaltyShootProgress + 0.035);
-            if (penaltyShootProgress >= 1 && penaltyResult && penaltyPhase === 'shoot') {
+            penaltyShootProgress = Math.min(1, penaltyShootProgress + 0.032);
+            if (keeperDiving) keeperDiveProgress = Math.min(1, keeperDiveProgress + 0.045);
+            if (penaltyShootProgress >= 1 && penaltyPhase === 'shoot') {
                 penaltyPhase = 'result';
                 penaltyResultTimer = 0;
                 if (penaltyResult === 'goal') {
@@ -1219,11 +1143,69 @@
             ctx.shadowBlur = 0;
         }
 
-        // Portiere (emoji semplice che oscilla)
-        const keeperOsc = Math.sin(Date.now()/400) * (gW * 0.25);
-        ctx.font = `${CELL_SIZE * 1.4}px Arial`;
-        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillText('🧤', W/2 + keeperOsc, gB - gH*0.18);
+        // ── PORTIERE ──
+        const keeperBaseY = gB - gH * 0.22;
+        let keeperScreenX, keeperScreenY, keeperAngle = 0;
+
+        if (!keeperDiving) {
+            // Oscilla lentamente
+            const osc = Math.sin(Date.now()/400) * (gW * 0.28);
+            keeperScreenX = W/2 + osc;
+            keeperScreenY = keeperBaseY;
+        } else {
+            // Tuffo: si sposta verso il target con ease
+            const diveEase = 1 - Math.pow(1 - keeperDiveProgress, 2);
+            const startKX = W/2;
+            const targetKX = gL + keeperDiveTargetX * gW;
+            const targetKY = gT + keeperDiveTargetY * gH + gH * 0.1;
+            keeperScreenX = startKX + (targetKX - startKX) * diveEase;
+            keeperScreenY = keeperBaseY + (targetKY - keeperBaseY) * diveEase * 0.6;
+            // Angolo di rotazione nel tuffo
+            const dir = keeperDiveTargetX > 0.5 ? 1 : -1;
+            keeperAngle = dir * diveEase * Math.PI * 0.45;
+        }
+
+        // Portiere disegnato con primitive (no emoji — trasparenti su mobile)
+        ctx.save();
+        ctx.translate(keeperScreenX, keeperScreenY);
+        ctx.rotate(keeperAngle);
+        const ks = CELL_SIZE * 0.9;
+        // corpo (maglia gialla)
+        ctx.fillStyle = '#FFD700';
+        ctx.strokeStyle = '#B8860B';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.roundRect(-ks*0.55, -ks*0.1, ks*1.1, ks*1.1, 6);
+        ctx.fill(); ctx.stroke();
+        // testa
+        ctx.fillStyle = '#FDBCB4';
+        ctx.strokeStyle = '#8B4513';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(0, -ks*0.35, ks*0.38, 0, Math.PI*2);
+        ctx.fill(); ctx.stroke();
+        // capelli
+        ctx.fillStyle = '#4A3000';
+        ctx.beginPath();
+        ctx.arc(0, -ks*0.62, ks*0.30, Math.PI, Math.PI*2);
+        ctx.fill();
+        // braccia allargate
+        ctx.strokeStyle = '#FFD700';
+        ctx.lineWidth = ks * 0.22;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(-ks*0.55, ks*0.2);
+        ctx.lineTo(-ks*1.1, -ks*0.1);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(ks*0.55, ks*0.2);
+        ctx.lineTo(ks*1.1, -ks*0.1);
+        ctx.stroke();
+        // guanti (rettangoli verdi alle mani)
+        ctx.fillStyle = '#00AA00';
+        ctx.beginPath(); ctx.roundRect(-ks*1.35, -ks*0.28, ks*0.45, ks*0.38, 4); ctx.fill();
+        ctx.beginPath(); ctx.roundRect( ks*0.90, -ks*0.28, ks*0.45, ks*0.38, 4); ctx.fill();
+        ctx.restore();
 
         // ── BARRA POTENZA (fase power) ──
         if (penaltyPhase === 'power') {
@@ -1270,18 +1252,18 @@
                 ctx.font = `bold ${W*0.055}px "Press Start 2P"`;
                 ctx.shadowBlur = 0;
                 ctx.fillText('+5 PUNTI! 🐺', W/2, H/2 + W*0.14 - bounce);
-            } else {
+            } else if (penaltyResult === 'saved') {
                 ctx.font = `bold ${W*0.09}px "Press Start 2P"`;
-                ctx.fillStyle = '#FF3300';
+                ctx.fillStyle = '#00BFFF';
                 ctx.strokeStyle = '#000';
                 ctx.lineWidth = 4;
                 ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                ctx.shadowBlur = 20; ctx.shadowColor = '#FF0000';
-                ctx.strokeText('FUORI!', W/2, H/2 + bounce);
-                ctx.fillText('FUORI!', W/2, H/2 + bounce);
+                ctx.shadowBlur = 20; ctx.shadowColor = '#00BFFF';
+                ctx.strokeText('PARATO!', W/2, H/2 + bounce);
+                ctx.fillText('PARATO!', W/2, H/2 + bounce);
                 ctx.font = `${W*0.06}px Arial`;
                 ctx.shadowBlur = 0;
-                ctx.fillText('😤 Che peccato!', W/2, H/2 + W*0.12);
+                ctx.fillText('💪 Portiere para!', W/2, H/2 + W*0.12);
             }
             ctx.globalAlpha = 1;
             ctx.shadowBlur = 0;
@@ -1715,7 +1697,6 @@
             snake.pop();
         }
 
-        updateSanta();
         updateGasperini();
         checkBallCollision();
         draw();
@@ -1768,7 +1749,6 @@
             drawGrid();
         }
         
-        drawSanta();
         drawGasperini();
         drawFood();
         drawBall();
@@ -1802,7 +1782,6 @@
         score = 0;
         lastTottiScore = 0;
         gameSpeed = baseSpeed;
-        santaSleigh = null;
         gasperini = null;
         gasperiniAngerTimer = 0;
         penaltyActive = false;
