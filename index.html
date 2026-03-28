@@ -611,6 +611,7 @@
     gasperiniImg.src = 'gasperini.png';
 
     let lastTottiScore = 0;
+    const tottiEmoji = '🐺'; // placeholder — verrà sostituito con immagine Totti
     let secretClickCount = 0;
     let secretClickTimer = null;
     let backgroundMusic = null;
@@ -939,6 +940,7 @@
     }
 
     function updateGasperini() {
+        if (penaltyActive) return; // gioco in pausa durante rigore
         if (gasperini) {
             gasperini.x += gasperini.velX;
             gasperini.y += gasperini.velY;
@@ -949,11 +951,8 @@
                 const dx = Math.abs(gasperini.x - head.x);
                 const dy = Math.abs(gasperini.y - head.y);
                 if (dx < 1.2 && dy < 1.2) {
-                    // Gasperini colpisce il lupo — perde 3 punti
-                    score = Math.max(0, score - 3);
-                    document.getElementById('score').textContent = score;
-                    gasperiniAngerTimer = 30;
                     gasperini = null;
+                    startPenalty(); // tocchi Gasperini → rigore!
                     return;
                 }
             }
@@ -1000,6 +999,292 @@
         }
 
         ctx.shadowBlur = 0;
+    }
+
+    // ════════════════════════════════════════════════
+    // MINI-GIOCO RIGORE
+    // ════════════════════════════════════════════════
+    let penaltyActive = false;
+    let penaltyPhase = 'aim'; // 'aim' | 'power' | 'shoot' | 'result'
+    let penaltyAimX = 0.5;   // 0=sinistra, 1=destra
+    let penaltyAimY = 0.5;   // 0=alto, 1=basso
+    let penaltyPower = 0;
+    let penaltyPowerDir = 1;
+    let penaltyBallX = 0, penaltyBallY = 0;
+    let penaltyBallTargetX = 0, penaltyBallTargetY = 0;
+    let penaltyShootProgress = 0;
+    let penaltyResult = null;  // 'goal' | 'miss'
+    let penaltyResultTimer = 0;
+    let penaltyPointerDown = false;
+    let penaltyPowerInterval = null;
+
+    function startPenalty() {
+        penaltyActive = true;
+        penaltyPhase = 'aim';
+        penaltyAimX = 0.5;
+        penaltyAimY = 0.35;
+        penaltyPower = 0;
+        penaltyPowerDir = 1;
+        penaltyResult = null;
+        penaltyResultTimer = 0;
+        penaltyShootProgress = 0;
+        clearInterval(penaltyPowerInterval);
+
+        // Registra input
+        canvas.addEventListener('pointermove', onPenaltyMove);
+        canvas.addEventListener('pointerdown', onPenaltyDown);
+        canvas.addEventListener('pointerup', onPenaltyUp);
+
+        requestAnimationFrame(penaltyLoop);
+    }
+
+    function endPenalty() {
+        penaltyActive = false;
+        clearInterval(penaltyPowerInterval);
+        canvas.removeEventListener('pointermove', onPenaltyMove);
+        canvas.removeEventListener('pointerdown', onPenaltyDown);
+        canvas.removeEventListener('pointerup', onPenaltyUp);
+    }
+
+    function onPenaltyMove(e) {
+        if (penaltyPhase !== 'aim') return;
+        const rect = canvas.getBoundingClientRect();
+        const cx = (e.clientX - rect.left) / rect.width;
+        const cy = (e.clientY - rect.top) / rect.height;
+        // Mappa sulla porta (zona centrale del canvas)
+        const goalL = 0.15, goalR = 0.85, goalT = 0.18, goalB = 0.52;
+        penaltyAimX = Math.max(0, Math.min(1, (cx - goalL) / (goalR - goalL)));
+        penaltyAimY = Math.max(0, Math.min(1, (cy - goalT) / (goalB - goalT)));
+    }
+
+    function onPenaltyDown(e) {
+        if (penaltyPhase === 'aim') {
+            // Prima tap: blocca mira e passa a power
+            penaltyPhase = 'power';
+            penaltyPower = 0;
+            penaltyPowerDir = 1;
+            penaltyPowerInterval = setInterval(() => {
+                penaltyPower += penaltyPowerDir * 0.022;
+                if (penaltyPower >= 1) { penaltyPower = 1; penaltyPowerDir = -1; }
+                if (penaltyPower <= 0) { penaltyPower = 0; penaltyPowerDir = 1; }
+            }, 16);
+        }
+    }
+
+    function onPenaltyUp(e) {
+        if (penaltyPhase === 'power') {
+            clearInterval(penaltyPowerInterval);
+            shoot();
+        }
+    }
+
+    function shoot() {
+        penaltyPhase = 'shoot';
+        penaltyShootProgress = 0;
+
+        // Posizione palla: centro basso canvas
+        penaltyBallX = CANVAS_SIZE / 2;
+        penaltyBallY = CANVAS_SIZE * 0.82;
+
+        // Target nella porta in base alla mira
+        const goalL = CANVAS_SIZE * 0.15, goalR = CANVAS_SIZE * 0.85;
+        const goalT = CANVAS_SIZE * 0.18, goalB = CANVAS_SIZE * 0.52;
+        penaltyBallTargetX = goalL + penaltyAimX * (goalR - goalL);
+        penaltyBallTargetY = goalT + penaltyAimY * (goalB - goalT);
+
+        // Goal se power > 0.25 e mira dentro la porta (sempre dentro per definizione)
+        // Miss se power < 0.15 (tiro molle) o ai bordi con potenza sbagliata
+        const tooWeak = penaltyPower < 0.15;
+        const edgeX = penaltyAimX < 0.05 || penaltyAimX > 0.95;
+        const edgeY = penaltyAimY < 0.05 || penaltyAimY > 0.95;
+        penaltyResult = (tooWeak || (edgeX && penaltyPower < 0.4)) ? 'miss' : 'goal';
+
+        requestAnimationFrame(penaltyLoop);
+    }
+
+    function penaltyLoop() {
+        if (!penaltyActive) return;
+        drawPenalty();
+        if (penaltyPhase === 'shoot') {
+            penaltyShootProgress = Math.min(1, penaltyShootProgress + 0.035);
+            if (penaltyShootProgress >= 1 && penaltyResult && penaltyPhase === 'shoot') {
+                penaltyPhase = 'result';
+                penaltyResultTimer = 0;
+                if (penaltyResult === 'goal') {
+                    score += 5;
+                    document.getElementById('score').textContent = score;
+                    createGoalParticles();
+                }
+            }
+        }
+        if (penaltyPhase === 'result') {
+            penaltyResultTimer++;
+            if (penaltyResultTimer > 100) {
+                endPenalty();
+                return;
+            }
+        }
+        requestAnimationFrame(penaltyLoop);
+    }
+
+    function drawPenalty() {
+        const W = CANVAS_SIZE, H = CANVAS_SIZE;
+
+        // Sfondo campo verde
+        ctx.fillStyle = '#1a6b1a';
+        ctx.fillRect(0, 0, W, H);
+
+        // Erba a strisce
+        for (let i = 0; i < 8; i++) {
+            if (i % 2 === 0) {
+                ctx.fillStyle = 'rgba(0,0,0,0.08)';
+                ctx.fillRect(0, i * H/8, W, H/8);
+            }
+        }
+
+        // Linee campo
+        ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(W*0.05, H*0.6, W*0.9, H*0.35); // area rigore
+        ctx.beginPath(); ctx.arc(W/2, H*0.62, W*0.06, 0, Math.PI*2); ctx.stroke(); // disco
+
+        // ── PORTA in prospettiva ──
+        const gL = W * 0.15, gR = W * 0.85;
+        const gT = H * 0.18, gB = H * 0.52;
+        const gW = gR - gL, gH = gB - gT;
+
+        // Rete (griglia)
+        ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+        ctx.lineWidth = 1;
+        const cols = 10, rows = 6;
+        for (let c = 0; c <= cols; c++) {
+            const px = gL + c/cols * gW;
+            ctx.beginPath(); ctx.moveTo(px, gT); ctx.lineTo(px, gB); ctx.stroke();
+        }
+        for (let r = 0; r <= rows; r++) {
+            const py = gT + r/rows * gH;
+            ctx.beginPath(); ctx.moveTo(gL, py); ctx.lineTo(gR, py); ctx.stroke();
+        }
+
+        // Pali e traversa
+        ctx.strokeStyle = '#FFFFFF';
+        ctx.lineWidth = 5;
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = '#FFFFFF';
+        ctx.strokeRect(gL, gT, gW, gH);
+        ctx.shadowBlur = 0;
+
+        // Mirino (fase aim) — croce rossa sul punto puntato
+        if (penaltyPhase === 'aim' || penaltyPhase === 'power') {
+            const aimPx = gL + penaltyAimX * gW;
+            const aimPy = gT + penaltyAimY * gH;
+            const pulse = penaltyPhase === 'aim' ? Math.sin(Date.now()/200)*4 : 0;
+            const r = 18 + pulse;
+            ctx.strokeStyle = penaltyPhase === 'power' ? '#FFD700' : '#FF0000';
+            ctx.lineWidth = 3;
+            ctx.shadowBlur = 12;
+            ctx.shadowColor = ctx.strokeStyle;
+            // Cerchio mirino
+            ctx.beginPath(); ctx.arc(aimPx, aimPy, r, 0, Math.PI*2); ctx.stroke();
+            // Croce
+            ctx.beginPath();
+            ctx.moveTo(aimPx - r*1.4, aimPy); ctx.lineTo(aimPx + r*1.4, aimPy);
+            ctx.moveTo(aimPx, aimPy - r*1.4); ctx.lineTo(aimPx, aimPy + r*1.4);
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+        }
+
+        // Palla sul dischetto
+        const ballScreenX = CANVAS_SIZE / 2;
+        const ballScreenY = CANVAS_SIZE * 0.82;
+
+        if (penaltyPhase === 'shoot') {
+            // Palla in volo
+            const ex = 1 - Math.pow(1 - penaltyShootProgress, 3);
+            const bx = ballScreenX + (penaltyBallTargetX - ballScreenX) * ex;
+            const by = ballScreenY + (penaltyBallTargetY - ballScreenY) * ex;
+            const scale = 1 + penaltyShootProgress * 1.2;
+            ctx.save();
+            ctx.shadowBlur = 20; ctx.shadowColor = '#FFFFFF';
+            ctx.font = `${CELL_SIZE * scale}px Arial`;
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText('⚽', bx, by);
+            ctx.restore();
+        } else if (penaltyPhase !== 'result') {
+            ctx.shadowBlur = 15; ctx.shadowColor = '#FFF';
+            ctx.font = `${CELL_SIZE * 1.3}px Arial`;
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText('⚽', ballScreenX, ballScreenY);
+            ctx.shadowBlur = 0;
+        }
+
+        // Portiere (emoji semplice che oscilla)
+        const keeperOsc = Math.sin(Date.now()/400) * (gW * 0.25);
+        ctx.font = `${CELL_SIZE * 1.4}px Arial`;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('🧤', W/2 + keeperOsc, gB - gH*0.18);
+
+        // ── BARRA POTENZA (fase power) ──
+        if (penaltyPhase === 'power') {
+            const bx = W*0.1, by = H*0.9, bw = W*0.8, bh = 22;
+            ctx.fillStyle = 'rgba(0,0,0,0.6)';
+            ctx.roundRect(bx-2, by-2, bw+4, bh+4, 6); ctx.fill();
+            const pct = penaltyPower;
+            const barColor = pct > 0.75 ? '#FF3300' : pct > 0.45 ? '#FFD700' : '#00CC44';
+            ctx.fillStyle = barColor;
+            ctx.shadowBlur = 10; ctx.shadowColor = barColor;
+            ctx.beginPath(); ctx.roundRect(bx, by, bw * pct, bh, 4); ctx.fill();
+            ctx.shadowBlur = 0;
+            // Label
+            ctx.font = `bold ${CELL_SIZE * 0.6}px "Press Start 2P"`;
+            ctx.fillStyle = '#FFF';
+            ctx.textAlign = 'center';
+            ctx.fillText('POTENZA — RILASCIA!', W/2, by - 10);
+        }
+
+        // ── ISTRUZIONE fase aim ──
+        if (penaltyPhase === 'aim') {
+            ctx.font = `bold ${CELL_SIZE * 0.55}px "Press Start 2P"`;
+            ctx.fillStyle = '#FFD700';
+            ctx.textAlign = 'center';
+            ctx.shadowBlur = 8; ctx.shadowColor = '#000';
+            ctx.fillText('MUOVI IL DITO — POI TOCCA!', W/2, H*0.92);
+            ctx.shadowBlur = 0;
+        }
+
+        // ── RISULTATO ──
+        if (penaltyPhase === 'result') {
+            const alpha = Math.min(1, penaltyResultTimer / 15);
+            ctx.globalAlpha = alpha;
+            const bounce = Math.sin(penaltyResultTimer / 8) * 6;
+            if (penaltyResult === 'goal') {
+                ctx.font = `bold ${W*0.13}px "Press Start 2P"`;
+                ctx.fillStyle = '#FFD700';
+                ctx.strokeStyle = '#DC143C';
+                ctx.lineWidth = 6;
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.shadowBlur = 30; ctx.shadowColor = '#FFD700';
+                ctx.strokeText('GOAL!', W/2, H/2 + bounce);
+                ctx.fillText('GOAL!', W/2, H/2 + bounce);
+                ctx.font = `bold ${W*0.055}px "Press Start 2P"`;
+                ctx.shadowBlur = 0;
+                ctx.fillText('+5 PUNTI! 🐺', W/2, H/2 + W*0.14 - bounce);
+            } else {
+                ctx.font = `bold ${W*0.09}px "Press Start 2P"`;
+                ctx.fillStyle = '#FF3300';
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 4;
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.shadowBlur = 20; ctx.shadowColor = '#FF0000';
+                ctx.strokeText('FUORI!', W/2, H/2 + bounce);
+                ctx.fillText('FUORI!', W/2, H/2 + bounce);
+                ctx.font = `${W*0.06}px Arial`;
+                ctx.shadowBlur = 0;
+                ctx.fillText('😤 Che peccato!', W/2, H/2 + W*0.12);
+            }
+            ctx.globalAlpha = 1;
+            ctx.shadowBlur = 0;
+        }
     }
 
     function spawnBall() {
@@ -1115,21 +1400,19 @@
             ctx.fillText('DAJE ROMA DAJE!', CANVAS_SIZE / 2, dajeY - bounce);
             ctx.shadowBlur = 0;
             
-            if (santaSleigh) {
-                const x = santaSleigh.x * CELL_SIZE;
-                const y = santaSleigh.y * CELL_SIZE;
-                const santaBounce = Math.sin(Date.now() / 80) * 15;
-                
-                ctx.shadowBlur = 35;
-                ctx.shadowColor = '#FFD700';
-                ctx.font = `${CELL_SIZE * 1.8}px Arial`;
-                ctx.fillText('🎅', x, y - santaBounce);
-                
-                ctx.font = `${CELL_SIZE * 1}px Arial`;
-                ctx.fillText('🙌', x + CELL_SIZE * 0.7, y - CELL_SIZE * 0.7 - santaBounce);
-                ctx.fillText('🙌', x - CELL_SIZE * 0.7, y - CELL_SIZE * 0.7 - santaBounce);
-                ctx.shadowBlur = 0;
-            }
+            // Totti esulta 🐺
+            const tottiX = CANVAS_SIZE * 0.5;
+            const tottiY = CANVAS_SIZE * 0.72;
+            const tottiBounce = Math.sin(Date.now() / 80) * 12;
+            ctx.shadowBlur = 35;
+            ctx.shadowColor = '#FFD700';
+            ctx.font = `${CELL_SIZE * 2.2}px Arial`;
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText(tottiEmoji, tottiX, tottiY - tottiBounce);
+            ctx.font = `${CELL_SIZE * 0.9}px Arial`;
+            ctx.fillText('🙌', tottiX + CELL_SIZE * 1.2, tottiY - CELL_SIZE * 0.8 - tottiBounce);
+            ctx.fillText('🙌', tottiX - CELL_SIZE * 1.2, tottiY - CELL_SIZE * 0.8 - tottiBounce);
+            ctx.shadowBlur = 0;
         }
         
         if (progress >= 1) {
@@ -1390,6 +1673,7 @@
 
     function updateGame() {
         if (!gameRunning) return;
+        if (penaltyActive) return; // pausa durante il rigore
 
         direction = nextDirection;
 
@@ -1518,6 +1802,8 @@
         santaSleigh = null;
         gasperini = null;
         gasperiniAngerTimer = 0;
+        penaltyActive = false;
+        penaltyPhase = 'aim';
         ball = null;
         goalAnimation = null;
         soccerFieldActive = false;
