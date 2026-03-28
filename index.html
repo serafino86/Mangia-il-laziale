@@ -603,7 +603,11 @@
 <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
-    
+
+    // Preload wolf image
+    const wolfImg = new Image();
+    wolfImg.src = 'wolf-icon.png';
+
     let lastTottiScore = 0;
     let secretClickCount = 0;
     let secretClickTimer = null;
@@ -1236,25 +1240,35 @@
         const x = head.x * CELL_SIZE;
         const y = head.y * CELL_SIZE;
         
-        // Cerchio oro solido come sfondo
-        ctx.fillStyle = '#FFD700';
-        ctx.beginPath();
-        ctx.arc(x + CELL_SIZE / 2, y + CELL_SIZE / 2, CELL_SIZE * 0.75, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Bordo rosso
-        ctx.strokeStyle = '#DC143C';
-        ctx.lineWidth = 3;
-        ctx.stroke();
-
         // Glow oro
         ctx.shadowBlur = 25;
         ctx.shadowColor = '#FFD700';
-        ctx.font = `${CELL_SIZE * 1.6}px Arial`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
 
-        ctx.fillText('🐺', x + CELL_SIZE / 2, y + CELL_SIZE / 2);
+        if (wolfImg.complete && wolfImg.naturalWidth > 0) {
+            // Clip circolare per rimuovere lo sfondo grigio
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(x + CELL_SIZE / 2, y + CELL_SIZE / 2, CELL_SIZE * 0.78, 0, Math.PI * 2);
+            ctx.clip();
+            ctx.drawImage(wolfImg, x - CELL_SIZE * 0.3, y - CELL_SIZE * 0.3, CELL_SIZE * 1.6, CELL_SIZE * 1.6);
+            ctx.restore();
+            // Bordo oro
+            ctx.strokeStyle = '#FFD700';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(x + CELL_SIZE / 2, y + CELL_SIZE / 2, CELL_SIZE * 0.78, 0, Math.PI * 2);
+            ctx.stroke();
+        } else {
+            // Fallback emoji
+            ctx.fillStyle = '#FFD700';
+            ctx.beginPath();
+            ctx.arc(x + CELL_SIZE / 2, y + CELL_SIZE / 2, CELL_SIZE * 0.75, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.font = `${CELL_SIZE * 1.6}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('🐺', x + CELL_SIZE / 2, y + CELL_SIZE / 2);
+        }
 
         ctx.shadowBlur = 0;
     }
@@ -1265,25 +1279,24 @@
         
         const pulse = Math.sin(Date.now() / 150) * 4; // RIDOTTO pulse
         
-        // SOLID background circle - RIDOTTO
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)'; // PIÙ OPACO
+        // Cerchio celeste solido (colore Lazio)
+        ctx.fillStyle = '#87CEEB';
         ctx.beginPath();
-        ctx.arc(x + CELL_SIZE / 2, y + CELL_SIZE / 2, CELL_SIZE * 0.7 + pulse / 2, 0, Math.PI * 2);
+        ctx.arc(x + CELL_SIZE / 2, y + CELL_SIZE / 2, CELL_SIZE * 0.72 + pulse / 2, 0, Math.PI * 2);
         ctx.fill();
-        
-        // Yellow glow background - PIÙ PICCOLO
-        ctx.fillStyle = 'rgba(255, 215, 0, 0.2)'; // MENO OPACO
-        ctx.beginPath();
-        ctx.arc(x + CELL_SIZE / 2, y + CELL_SIZE / 2, CELL_SIZE * 0.8 + pulse, 0, Math.PI * 2);
-        ctx.fill();
-        
-        ctx.shadowBlur = 30 + pulse; // RIDOTTO glow
-        ctx.shadowColor = '#FFD700';
-        ctx.font = `${CELL_SIZE * 1.8 + pulse}px Arial`;
+
+        // Bordo bianco
+        ctx.strokeStyle = '#FFFFFF';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.shadowBlur = 20 + pulse;
+        ctx.shadowColor = '#00BFFF';
+        ctx.font = `${CELL_SIZE * 1.6 + pulse * 0.3}px Arial`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText('🦅', x + CELL_SIZE / 2, y + CELL_SIZE / 2);
-        
+
         ctx.shadowBlur = 0;
     }
 
