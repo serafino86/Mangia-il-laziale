@@ -496,6 +496,55 @@
         font-weight: bold;
     }
 
+    .social-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin: 6px 5px;
+        padding: 10px 18px;
+        font-size: clamp(0.5rem, 1.8vw, 0.75rem);
+        font-family: 'Press Start 2P', cursive;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        font-weight: bold;
+        touch-action: manipulation;
+        border: 3px solid;
+    }
+
+    .social-btn.instagram {
+        background: linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045);
+        color: #fff;
+        border-color: #fd1d1d;
+        box-shadow: 0 0 20px rgba(253, 29, 29, 0.6);
+    }
+
+    .social-btn.facebook {
+        background: linear-gradient(135deg, #1877f2, #0a5bd1);
+        color: #fff;
+        border-color: #1877f2;
+        box-shadow: 0 0 20px rgba(24, 119, 242, 0.6);
+    }
+
+    .social-btn:active {
+        transform: scale(0.95);
+    }
+
+    .club-logo {
+        width: clamp(70px, 20vw, 110px);
+        height: clamp(70px, 20vw, 110px);
+        border-radius: 50%;
+        border: 3px solid #FFD700;
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+        object-fit: cover;
+        margin-bottom: 8px;
+    }
+
+    #startScreen {
+        background: radial-gradient(ellipse at top, #3d0000 0%, #1a0000 40%, #000 100%) !important;
+    }
+
     .wolf-click-area {
         display: inline-block;
         cursor: pointer;
@@ -528,6 +577,7 @@
 
 <div id="startScreen">
     <div class="start-content">
+        <img src="IMG_2234.jpg" alt="Roma Club Ginevra" class="club-logo">
         <h2><span class="wolf-click-area" onclick="handleWolfClick()">🐺</span> MANGIA IL LAZIALE <span class="wolf-click-area" onclick="handleWolfClick()">🦅</span></h2>
         <p>AS ROMA CLUB GINEVRA</p>
         <div class="controls-help">
@@ -539,15 +589,22 @@
         <p style="font-size: 0.55rem; margin-top: 12px;">Il lupo corre sempre!</p>
         <p style="font-size: 0.55rem;">⚽ Attento a Francesco Totti! 🔫</p>
         <p style="font-size: 0.55rem;">⚽ Tocca il pallone per fare GOAL!</p>
-        
+        <p style="font-size: 0.5rem; color: #FFD700; margin-top: 8px;">🏆 Chi ha il record a fine stagione vince una felpa!</p>
+
         <div style="margin: 15px 0;">
             <button class="start-btn" onclick="toggleMusicButton()" id="musicBtn" style="padding: 10px 20px; margin: 5px;">
                 🔊 MUSICA ON
             </button>
         </div>
-        
+
         <button class="start-btn" onclick="startGame()">START</button>
-        <p style="font-size: 0.5rem; color: #FFD700; margin-top: 15px; text-shadow: 0 0 10px #FFD700;">by Serafino</p>
+
+        <div style="margin-top: 15px;">
+            <a href="https://www.instagram.com/romaclubgeneve/" target="_blank" class="social-btn instagram">📸 Instagram</a>
+            <a href="https://www.facebook.com/romaclubginevra/" target="_blank" class="social-btn facebook">👍 Facebook</a>
+        </div>
+
+        <p style="font-size: 0.5rem; color: #FFD700; margin-top: 12px; text-shadow: 0 0 10px #FFD700;">by Serafino</p>
         <p class="disclaimer">Fan-made game - Non affiliato con AS Roma o SS Lazio</p>
     </div>
 </div>
@@ -595,6 +652,10 @@
                 ☕ OFFRIMI UN CAFFÈ
             </a>
         </div>
+        <div style="margin-top: 10px;">
+            <a href="https://www.instagram.com/romaclubgeneve/" target="_blank" class="social-btn instagram">📸 Instagram</a>
+            <a href="https://www.facebook.com/romaclubginevra/" target="_blank" class="social-btn facebook">👍 Facebook</a>
+        </div>
         <p style="font-size: 0.5rem; color: #FFD700; margin-top: 12px; text-shadow: 0 0 10px #FFD700;">Created by Serafino</p>
         <p class="disclaimer">Fan-made game - Non affiliato con AS Roma o SS Lazio</p>
     </div>
@@ -619,6 +680,7 @@
     let secretClickTimer = null;
     let backgroundMusic = null;
     let musicPlaying = false;
+    let musicEnabled = true;
     
     const tottiPhrases = [
         "ER PUPONE APPROVA!",
@@ -791,7 +853,7 @@
     let gasperiniSpawnChance = 0.003;
     let gasperiniAngerTimer = 0;
     let tottiCampo = null;
-    let tottiCampoSpawnChance = 0.0015;
+    let tottiCampoSpawnChance = 0.004;
     let ball = null;
     let goalAnimation = null;
     let soccerFieldActive = false;
@@ -1846,8 +1908,8 @@
         document.getElementById('gameOverScreen').style.display = 'none';
         gameRunning = true;
         
-        // Restart music if it was playing
-        if (!musicPlaying) {
+        // Restart music only if user hasn't disabled it
+        if (musicEnabled && !musicPlaying) {
             playMusic();
         }
         
@@ -1855,8 +1917,8 @@
     }
 
     function startGame() {
-        // Start music when game starts
-        playMusic();
+        // Start music only if user hasn't disabled it
+        if (musicEnabled) playMusic();
         
         document.getElementById('startScreen').style.display = 'none';
         snake = [{x: Math.floor(GRID_COUNT / 2), y: Math.floor(GRID_COUNT / 2)}];
@@ -1868,11 +1930,12 @@
     
     function toggleMusicButton() {
         const btn = document.getElementById('musicBtn');
-        if (musicPlaying) {
+        if (musicEnabled) {
+            musicEnabled = false;
             stopMusic();
             btn.textContent = '🔇 MUSICA OFF';
         } else {
-            playMusic();
+            musicEnabled = true;
             btn.textContent = '🔊 MUSICA ON';
         }
     }
