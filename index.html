@@ -607,8 +607,10 @@
     // Preload images
     const wolfImg = new Image();
     wolfImg.src = 'wolf-icon.png';
-    const gasperiniImg = new Image();
-    gasperiniImg.src = 'gasperini.png';
+    const gaspInvasionImg = new Image();   // frontale arcigno → invasione di campo
+    gaspInvasionImg.src = 'gasp_invasion.png';
+    const gaspFrontImg = new Image();      // laterale → portiere nel rigore
+    gaspFrontImg.src = 'gasp_front.png';
     const tottiImg = new Image();
     tottiImg.src = 'totti-emoji.png';
 
@@ -788,6 +790,8 @@
     let gasperini = null;
     let gasperiniSpawnChance = 0.003;
     let gasperiniAngerTimer = 0;
+    let tottiCampo = null;
+    let tottiCampoSpawnChance = 0.0015;
     let ball = null;
     let goalAnimation = null;
     let soccerFieldActive = false;
@@ -886,13 +890,9 @@
         ctx.shadowBlur = 20;
         ctx.shadowColor = '#FF0000';
 
-        if (gasperiniImg.complete && gasperiniImg.naturalWidth > 0) {
-            // Clip circolare per sfondo
+        if (gaspInvasionImg.complete && gaspInvasionImg.naturalWidth > 0) {
             ctx.save();
-            ctx.beginPath();
-            ctx.arc(x + CELL_SIZE/2, y + CELL_SIZE/2, CELL_SIZE * 0.9, 0, Math.PI*2);
-            ctx.clip();
-            ctx.drawImage(gasperiniImg, x - sz*0.2, y - sz*0.25, sz, sz);
+            ctx.drawImage(gaspInvasionImg, x - sz*0.4, y - sz*0.5, sz*1.8, sz*1.8);
             ctx.restore();
         } else {
             ctx.font = `${CELL_SIZE * 1.6}px Arial`;
@@ -910,6 +910,76 @@
         }
 
         ctx.shadowBlur = 0;
+    }
+
+    // ── TOTTI CAMPO ──
+    function createTottiCampo() {
+        const side = Math.floor(Math.random() * 4);
+        let sx, sy, vx, vy;
+        const spd = 0.14 + Math.random() * 0.10;
+        switch(side) {
+            case 0: sx = Math.floor(Math.random()*GRID_COUNT); sy = -3; vx = (Math.random()-0.5)*0.15; vy = spd; break;
+            case 1: sx = Math.floor(Math.random()*GRID_COUNT); sy = GRID_COUNT+3; vx = (Math.random()-0.5)*0.15; vy = -spd; break;
+            case 2: sx = GRID_COUNT+3; sy = Math.floor(Math.random()*GRID_COUNT); vx = -spd; vy = (Math.random()-0.5)*0.15; break;
+            default: sx = -3; sy = Math.floor(Math.random()*GRID_COUNT); vx = spd; vy = (Math.random()-0.5)*0.15; break;
+        }
+        tottiCampo = { x: sx, y: sy, velX: vx, velY: vy };
+    }
+
+    function updateTottiCampo() {
+        if (penaltyActive) return;
+        if (tottiCampo) {
+            tottiCampo.x += tottiCampo.velX;
+            tottiCampo.y += tottiCampo.velY;
+
+            if (gameRunning && snake.length > 0) {
+                const head = snake[0];
+                const dx = Math.abs(tottiCampo.x - head.x);
+                const dy = Math.abs(tottiCampo.y - head.y);
+                if (dx < 1.5 && dy < 1.5) {
+                    tottiCampo = null;
+                    score += 3;
+                    document.getElementById('score').textContent = score;
+                    showTottiCelebration();
+                    return;
+                }
+            }
+            if (tottiCampo.x < -5 || tottiCampo.x > GRID_COUNT+5 || tottiCampo.y < -5 || tottiCampo.y > GRID_COUNT+5) {
+                tottiCampo = null;
+            }
+        }
+        if (!tottiCampo && !gasperini && Math.random() < tottiCampoSpawnChance) {
+            createTottiCampo();
+        }
+    }
+
+    function drawTottiCampo() {
+        if (!tottiCampo) return;
+        const x = tottiCampo.x * CELL_SIZE;
+        const y = tottiCampo.y * CELL_SIZE;
+        const sz = CELL_SIZE * 2.6;
+
+        ctx.save();
+        ctx.shadowBlur = 25;
+        ctx.shadowColor = '#FFD700';
+        if (tottiImg.complete && tottiImg.naturalWidth > 0) {
+            ctx.drawImage(tottiImg, x - sz*0.3, y - sz*0.3, sz, sz);
+        } else {
+            ctx.font = `${CELL_SIZE * 1.6}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('⭐', x + CELL_SIZE/2, y + CELL_SIZE/2);
+        }
+        // Label "+3"
+        ctx.shadowBlur = 0;
+        ctx.font = `bold ${CELL_SIZE * 0.55}px "Press Start 2P"`;
+        ctx.fillStyle = '#FFD700';
+        ctx.textAlign = 'center';
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 3;
+        ctx.strokeText('+3 ⭐', x + CELL_SIZE/2, y - CELL_SIZE * 0.3);
+        ctx.fillText('+3 ⭐', x + CELL_SIZE/2, y - CELL_SIZE * 0.3);
+        ctx.restore();
     }
 
     // ════════════════════════════════════════════════
@@ -1165,46 +1235,23 @@
             keeperAngle = dir * diveEase * Math.PI * 0.45;
         }
 
-        // Portiere disegnato con primitive (no emoji — trasparenti su mobile)
+        // Portiere = Gasperini pixel art (gasp_front.png)
+        const ks = CELL_SIZE * 2.8;
         ctx.save();
         ctx.translate(keeperScreenX, keeperScreenY);
         ctx.rotate(keeperAngle);
-        const ks = CELL_SIZE * 0.9;
-        // corpo (maglia gialla)
-        ctx.fillStyle = '#FFD700';
-        ctx.strokeStyle = '#B8860B';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.roundRect(-ks*0.55, -ks*0.1, ks*1.1, ks*1.1, 6);
-        ctx.fill(); ctx.stroke();
-        // testa
-        ctx.fillStyle = '#FDBCB4';
-        ctx.strokeStyle = '#8B4513';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(0, -ks*0.35, ks*0.38, 0, Math.PI*2);
-        ctx.fill(); ctx.stroke();
-        // capelli
-        ctx.fillStyle = '#4A3000';
-        ctx.beginPath();
-        ctx.arc(0, -ks*0.62, ks*0.30, Math.PI, Math.PI*2);
-        ctx.fill();
-        // braccia allargate
-        ctx.strokeStyle = '#FFD700';
-        ctx.lineWidth = ks * 0.22;
-        ctx.lineCap = 'round';
-        ctx.beginPath();
-        ctx.moveTo(-ks*0.55, ks*0.2);
-        ctx.lineTo(-ks*1.1, -ks*0.1);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(ks*0.55, ks*0.2);
-        ctx.lineTo(ks*1.1, -ks*0.1);
-        ctx.stroke();
-        // guanti (rettangoli verdi alle mani)
-        ctx.fillStyle = '#00AA00';
-        ctx.beginPath(); ctx.roundRect(-ks*1.35, -ks*0.28, ks*0.45, ks*0.38, 4); ctx.fill();
-        ctx.beginPath(); ctx.roundRect( ks*0.90, -ks*0.28, ks*0.45, ks*0.38, 4); ctx.fill();
+        if (gaspFrontImg.complete && gaspFrontImg.naturalWidth > 0) {
+            // Specchia orizzontalmente in base al lato del tuffo
+            const flip = keeperDiving && keeperDiveTargetX > 0.5 ? -1 : 1;
+            ctx.scale(flip, 1);
+            ctx.drawImage(gaspFrontImg, -ks*0.5, -ks*0.9, ks, ks * 1.6);
+        } else {
+            // fallback primitive
+            ctx.fillStyle = '#FFD700';
+            ctx.beginPath();
+            ctx.roundRect(-ks*0.4, -ks*0.1, ks*0.8, ks*0.8, 6);
+            ctx.fill();
+        }
         ctx.restore();
 
         // ── BARRA POTENZA (fase power) ──
@@ -1698,6 +1745,7 @@
         }
 
         updateGasperini();
+        updateTottiCampo();
         checkBallCollision();
         draw();
     }
@@ -1750,6 +1798,7 @@
         }
         
         drawGasperini();
+        drawTottiCampo();
         drawFood();
         drawBall();
         drawSnake();
@@ -1784,6 +1833,7 @@
         gameSpeed = baseSpeed;
         gasperini = null;
         gasperiniAngerTimer = 0;
+        tottiCampo = null;
         penaltyActive = false;
         penaltyPhase = 'aim';
         ball = null;
