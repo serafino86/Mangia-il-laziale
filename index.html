@@ -682,7 +682,7 @@
 
     // Preload images
     const wolfImg = new Image();
-    wolfImg.src = 'wolf-icon.png';
+    wolfImg.src = 'lupetto_clean.png';
     const gaspInvasionImg = new Image();   // frontale arcigno → invasione di campo
     gaspInvasionImg.src = 'gasp_invasion.png';
     const gaspFrontImg = new Image();      // laterale → portiere nel rigore
@@ -1716,25 +1716,24 @@
         ctx.shadowColor = '#FFD700';
 
         if (wolfImg.complete && wolfImg.naturalWidth > 0) {
-            // Clip circolare per rimuovere lo sfondo grigio
+            const sz = CELL_SIZE * 1.9;
+            const cx = x + CELL_SIZE / 2;
+            const cy = y + CELL_SIZE / 2;
+            // Rotate head based on movement direction
+            // lupetto_clean.png faces right by default
+            let angle = 0;
+            if (direction.x === -1) angle = Math.PI;       // left → flip
+            else if (direction.y === -1) angle = -Math.PI / 2; // up
+            else if (direction.y === 1)  angle = Math.PI / 2;  // down
             ctx.save();
-            ctx.beginPath();
-            ctx.arc(x + CELL_SIZE / 2, y + CELL_SIZE / 2, CELL_SIZE * 0.78, 0, Math.PI * 2);
-            ctx.clip();
-            ctx.drawImage(wolfImg, x - CELL_SIZE * 0.3, y - CELL_SIZE * 0.3, CELL_SIZE * 1.6, CELL_SIZE * 1.6);
+            ctx.shadowBlur = 25;
+            ctx.shadowColor = '#FFD700';
+            ctx.translate(cx, cy);
+            ctx.rotate(angle);
+            ctx.drawImage(wolfImg, -sz / 2, -sz / 2, sz, sz);
             ctx.restore();
-            // Bordo oro
-            ctx.strokeStyle = '#FFD700';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.arc(x + CELL_SIZE / 2, y + CELL_SIZE / 2, CELL_SIZE * 0.78, 0, Math.PI * 2);
-            ctx.stroke();
         } else {
             // Fallback emoji
-            ctx.fillStyle = '#FFD700';
-            ctx.beginPath();
-            ctx.arc(x + CELL_SIZE / 2, y + CELL_SIZE / 2, CELL_SIZE * 0.75, 0, Math.PI * 2);
-            ctx.fill();
             ctx.font = `${CELL_SIZE * 1.6}px Arial`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
