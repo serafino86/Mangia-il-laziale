@@ -884,16 +884,14 @@
         if (!gasperini) return;
         const x = gasperini.x * CELL_SIZE;
         const y = gasperini.y * CELL_SIZE;
-        const sz = CELL_SIZE * 2.2;
+        const sz = CELL_SIZE * 3.2;
 
-        // Glow rosso arrabbiatura
-        ctx.shadowBlur = 20;
+        ctx.save();
+        ctx.shadowBlur = 18;
         ctx.shadowColor = '#FF0000';
 
         if (gaspInvasionImg.complete && gaspInvasionImg.naturalWidth > 0) {
-            ctx.save();
-            ctx.drawImage(gaspInvasionImg, x - sz*0.4, y - sz*0.5, sz*1.8, sz*1.8);
-            ctx.restore();
+            ctx.drawImage(gaspInvasionImg, x - sz*0.5, y - sz*0.6, sz, sz);
         } else {
             ctx.font = `${CELL_SIZE * 1.6}px Arial`;
             ctx.textAlign = 'center';
@@ -901,15 +899,20 @@
             ctx.fillText('😡', x + CELL_SIZE/2, y + CELL_SIZE/2);
         }
 
-        // Label "GASPERINI!" lampeggiante quando è in modalità arrabbiata
+        ctx.shadowBlur = 0;
+
+        // Label "CHE PALLE!" quando in modalità arrabbiata
         if (gasperiniAngerTimer > 0) {
-            ctx.font = `bold ${CELL_SIZE * 0.55}px Arial`;
+            ctx.font = `bold ${CELL_SIZE * 0.5}px "Press Start 2P"`;
             ctx.fillStyle = '#FF0000';
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 3;
             ctx.textAlign = 'center';
-            ctx.fillText('CHE PALLE!', x + CELL_SIZE/2, y - CELL_SIZE * 0.6);
+            ctx.strokeText('CHE PALLE!', x + CELL_SIZE/2, y - CELL_SIZE * 0.8);
+            ctx.fillText('CHE PALLE!', x + CELL_SIZE/2, y - CELL_SIZE * 0.8);
         }
 
-        ctx.shadowBlur = 0;
+        ctx.restore();
     }
 
     // ── TOTTI CAMPO ──
@@ -957,28 +960,27 @@
         if (!tottiCampo) return;
         const x = tottiCampo.x * CELL_SIZE;
         const y = tottiCampo.y * CELL_SIZE;
-        const sz = CELL_SIZE * 2.6;
+        const sz = CELL_SIZE * 3.0;
 
         ctx.save();
         ctx.shadowBlur = 25;
         ctx.shadowColor = '#FFD700';
         if (tottiImg.complete && tottiImg.naturalWidth > 0) {
-            ctx.drawImage(tottiImg, x - sz*0.3, y - sz*0.3, sz, sz);
+            ctx.drawImage(tottiImg, x - sz*0.4, y - sz*0.4, sz, sz);
         } else {
-            ctx.font = `${CELL_SIZE * 1.6}px Arial`;
+            ctx.font = `${CELL_SIZE * 1.8}px Arial`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText('⭐', x + CELL_SIZE/2, y + CELL_SIZE/2);
         }
-        // Label "+3"
         ctx.shadowBlur = 0;
-        ctx.font = `bold ${CELL_SIZE * 0.55}px "Press Start 2P"`;
+        ctx.font = `bold ${CELL_SIZE * 0.5}px "Press Start 2P"`;
         ctx.fillStyle = '#FFD700';
-        ctx.textAlign = 'center';
         ctx.strokeStyle = '#000';
         ctx.lineWidth = 3;
-        ctx.strokeText('+3 ⭐', x + CELL_SIZE/2, y - CELL_SIZE * 0.3);
-        ctx.fillText('+3 ⭐', x + CELL_SIZE/2, y - CELL_SIZE * 0.3);
+        ctx.textAlign = 'center';
+        ctx.strokeText('+3', x + CELL_SIZE/2, y - CELL_SIZE * 0.6);
+        ctx.fillText('+3', x + CELL_SIZE/2, y - CELL_SIZE * 0.6);
         ctx.restore();
     }
 
